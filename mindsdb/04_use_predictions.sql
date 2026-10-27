@@ -1,26 +1,26 @@
 -- ========================================
--- Steg 4: Använd predictions
--- OBS: Kör varje query SEPARAT (en i taget)!
--- Kör EFTER att modellen tränats färdigt
+-- Step 4: Use predictions
+-- NOTE: Run each query SEPARATELY (one at a time)!
+-- Run AFTER the model has finished training
 -- ========================================
 
--- Query 1: Kontrollera att modellen är färdig (STATUS ska vara "complete")
+-- Query 1: Check that the model is ready (STATUS should be "complete")
 DESCRIBE booking_forecast
 
--- Query 2: Visa alla modeller
+-- Query 2: Show all models
 -- SHOW MODELS
 
--- Query 3: Predicera bokningar för nästa 14 dagar (HUVUDQUERY!)
+-- Query 3: Predict bookings for the next 14 days (MAIN QUERY!)
 -- SELECT
 --   booking_date,
 --   CASE day_of_week
---     WHEN 0 THEN 'Söndag'
---     WHEN 1 THEN 'Måndag'
---     WHEN 2 THEN 'Tisdag'
---     WHEN 3 THEN 'Onsdag'
---     WHEN 4 THEN 'Torsdag'
---     WHEN 5 THEN 'Fredag'
---     WHEN 6 THEN 'Lördag'
+--     WHEN 0 THEN 'Sunday'
+--     WHEN 1 THEN 'Monday'
+--     WHEN 2 THEN 'Tuesday'
+--     WHEN 3 THEN 'Wednesday'
+--     WHEN 4 THEN 'Thursday'
+--     WHEN 5 THEN 'Friday'
+--     WHEN 6 THEN 'Saturday'
 --   END as weekday,
 --   booking_count as predicted_bookings
 -- FROM booking_forecast
@@ -28,9 +28,9 @@ DESCRIBE booking_forecast
 -- ORDER BY booking_date
 -- LIMIT 14
 
--- Query 4: Jämför predictions med faktiska bokningar (senaste veckan)
+-- Query 4: Compare predictions with actual bookings (last week)
 -- SELECT
---   'Faktisk' as type,
+--   'Actual' as type,
 --   DATE_TRUNC('day', start_time) as date,
 --   COUNT(*) as bookings
 -- FROM awaio_postgres.bookings

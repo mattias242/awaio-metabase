@@ -32,17 +32,17 @@ if 'selected_agent' not in st.session_state:
 
 # Sidebar
 with st.sidebar:
-    st.title("⚙️ Inställningar")
+    st.title("⚙️ Settings")
 
     # Agent selector
     agent_options = {
-        'awaio_agent': 'Awaio Agent (Autonom med SQL)',
+        'awaio_agent': 'Awaio Agent (autonomous, with SQL)',
         'awaio_gemini_agent': 'Gemini Model (Basic)',
         'awaio_chat_agent': 'OpenAI Model'
     }
 
     selected = st.selectbox(
-        "Välj AI-agent:",
+        "Choose AI agent:",
         options=list(agent_options.keys()),
         format_func=lambda x: agent_options[x],
         index=0
@@ -52,34 +52,34 @@ with st.sidebar:
     st.divider()
 
     # Clear chat button
-    if st.button("🗑️ Rensa chat", use_container_width=True):
+    if st.button("🗑️ Clear chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
     st.divider()
 
     # Info section
-    st.markdown("### 📊 Om Awaio AI")
+    st.markdown("### 📊 About Awaio AI")
     st.markdown("""
-    Denna chat-agent analyserar bokningsdata från Awaio systemet.
+    This chat agent analyses booking data from the Awaio system.
 
-    **Databas:**
-    - 57 skrivbord
-    - 3 våningar + Tillsammansytan
-    - Bokningshistorik
-    - Användardata
+    **Database:**
+    - 57 desks
+    - 3 floors + Tillsammansytan
+    - Booking history
+    - User data
 
-    **Fråga mig om:**
-    - Bokningstrender
-    - Resursutnyttjande
-    - Populära skrivbord
-    - Veckodagsanalys
-    - Rekommendationer
+    **Ask me about:**
+    - Booking trends
+    - Resource utilisation
+    - Popular desks
+    - Weekday analysis
+    - Recommendations
     """)
 
 # Main chat interface
 st.title("💬 Awaio AI Chat")
-st.markdown(f"Chatta med din bokningsdata via **{agent_options[st.session_state.selected_agent]}**")
+st.markdown(f"Chat with your booking data via **{agent_options[st.session_state.selected_agent]}**")
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -89,7 +89,7 @@ for message in st.session_state.messages:
             st.caption(message["timestamp"])
 
 # Chat input
-if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
+if prompt := st.chat_input("Ask a question about the booking data..."):
     # Add user message to chat
     timestamp = datetime.now().strftime("%H:%M:%S")
     st.session_state.messages.append({
@@ -106,14 +106,14 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
     # Get AI response
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        message_placeholder.markdown("🤔 Analyserar data...")
+        message_placeholder.markdown("🤔 Analysing data...")
 
         try:
             # Connect to MindsDB
             server = get_mindsdb_connection()
 
             if server is None:
-                response = "❌ Kunde inte ansluta till MindsDB. Kontrollera att MindsDB-containern körs."
+                response = "❌ Could not connect to MindsDB. Check that the MindsDB container is running."
             else:
                 # Check if using autonomous agent or basic model
                 if st.session_state.selected_agent == 'awaio_agent':
@@ -131,7 +131,7 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
                     # Basic Model - we need to provide data via JOIN
                     prompt_lower = prompt.lower()
 
-                    if any(word in prompt_lower for word in ['populär', 'mest bokad', 'bäst', 'skrivbord']):
+                    if any(word in prompt_lower for word in ['popular', 'most booked', 'best', 'desk']):
                         query = f"""
                         SELECT m.answer
                         FROM {st.session_state.selected_agent} m
@@ -144,33 +144,33 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
                             ORDER BY bookings DESC
                             LIMIT 10
                         ) data
-                        WHERE m.question = 'Här är data om skrivbordspopularitet. Besvara användarens fråga: "{prompt.replace("'", "''")}" - Svara KORT (max 2 meningar) med konkreta namn och siffror.'
+                        WHERE m.question = 'Here is data on desk popularity. Answer the user question: "{prompt.replace("'", "''")}" - Answer BRIEFLY (max 2 sentences) with concrete names and numbers.'
                         """
 
-                    elif any(word in prompt_lower for word in ['veckodag', 'dag', 'veckodagar']):
+                    elif any(word in prompt_lower for word in ['weekday', 'day', 'weekdays']):
                         query = f"""
                         SELECT m.answer
                         FROM {st.session_state.selected_agent} m
                         JOIN (
                             SELECT
                                 CASE EXTRACT(DOW FROM start_time)
-                                    WHEN 0 THEN 'Söndag'
-                                    WHEN 1 THEN 'Måndag'
-                                    WHEN 2 THEN 'Tisdag'
-                                    WHEN 3 THEN 'Onsdag'
-                                    WHEN 4 THEN 'Torsdag'
-                                    WHEN 5 THEN 'Fredag'
-                                    WHEN 6 THEN 'Lördag'
+                                    WHEN 0 THEN 'Sunday'
+                                    WHEN 1 THEN 'Monday'
+                                    WHEN 2 THEN 'Tuesday'
+                                    WHEN 3 THEN 'Wednesday'
+                                    WHEN 4 THEN 'Thursday'
+                                    WHEN 5 THEN 'Friday'
+                                    WHEN 6 THEN 'Saturday'
                                 END as weekday,
                                 COUNT(*) as bookings
                             FROM awaio_postgres.bookings
                             GROUP BY EXTRACT(DOW FROM start_time)
                             ORDER BY bookings DESC
                         ) data
-                        WHERE m.question = 'Här är bokningsdata per veckodag. Besvara: "{prompt.replace("'", "''")}" - Svara KORT (max 2 meningar).'
+                        WHERE m.question = 'Here is booking data per weekday. Answer: "{prompt.replace("'", "''")}" - Answer BRIEFLY (max 2 sentences).'
                         """
 
-                    elif any(word in prompt_lower for word in ['total', 'hur många', 'antal']):
+                    elif any(word in prompt_lower for word in ['total', 'how many', 'number of']):
                         query = f"""
                         SELECT m.answer
                         FROM {st.session_state.selected_agent} m
@@ -181,7 +181,7 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
                                 COUNT(DISTINCT entity_id) as unique_resources
                             FROM awaio_postgres.bookings
                         ) data
-                        WHERE m.question = 'Här är total statistik. Besvara: "{prompt.replace("'", "''")}" - Svara KORT (max 2 meningar).'
+                        WHERE m.question = 'Here are the overall statistics. Answer: "{prompt.replace("'", "''")}" - Answer BRIEFLY (max 2 sentences).'
                         """
 
                     else:
@@ -198,10 +198,10 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
                 if result_df is not None and not result_df.empty and 'answer' in result_df.columns:
                     response = str(result_df['answer'].iloc[0])
                 else:
-                    response = "❌ Kunde inte få svar från AI-agenten. Kontrollera att modellen är tränad och redo."
+                    response = "❌ No answer from the AI agent. Check that the model is trained and ready."
 
         except Exception as e:
-            response = f"❌ Ett fel uppstod: {str(e)}"
+            response = f"❌ An error occurred: {str(e)}"
 
         # Display response
         message_placeholder.markdown(response)
@@ -217,40 +217,40 @@ if prompt := st.chat_input("Ställ en fråga om bokningsdata..."):
 
 # Example questions
 if len(st.session_state.messages) == 0:
-    st.markdown("### 💡 Exempel på frågor:")
+    st.markdown("### 💡 Example questions:")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("📊 Vilken veckodag har flest bokningar?", use_container_width=True):
+        if st.button("📊 Which weekday has the most bookings?", use_container_width=True):
             st.session_state.messages.append({
                 "role": "user",
-                "content": "Vilken veckodag har flest bokningar?",
+                "content": "Which weekday has the most bookings?",
                 "timestamp": datetime.now().strftime("%H:%M:%S")
             })
             st.rerun()
 
-        if st.button("🏢 Vilket skrivbord är mest populärt?", use_container_width=True):
+        if st.button("🏢 Which desk is the most popular?", use_container_width=True):
             st.session_state.messages.append({
                 "role": "user",
-                "content": "Vilket skrivbord är mest populärt?",
+                "content": "Which desk is the most popular?",
                 "timestamp": datetime.now().strftime("%H:%M:%S")
             })
             st.rerun()
 
     with col2:
-        if st.button("📈 Ge mig en veckorapport", use_container_width=True):
+        if st.button("📈 Give me a weekly report", use_container_width=True):
             st.session_state.messages.append({
                 "role": "user",
-                "content": "Skapa en kort sammanfattning av veckans bokningar och trender",
+                "content": "Write a short summary of this week's bookings and trends",
                 "timestamp": datetime.now().strftime("%H:%M:%S")
             })
             st.rerun()
 
-        if st.button("💡 Vilka resurser är underutnyttjade?", use_container_width=True):
+        if st.button("💡 Which resources are under-used?", use_container_width=True):
             st.session_state.messages.append({
                 "role": "user",
-                "content": "Vilka resurser är underutnyttjade och vad rekommenderar du?",
+                "content": "Which resources are under-used and what do you recommend?",
                 "timestamp": datetime.now().strftime("%H:%M:%S")
             })
             st.rerun()

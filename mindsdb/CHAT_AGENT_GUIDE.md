@@ -1,36 +1,36 @@
-# AI Chat Agent för Awaio Bokningsdata
+# AI Chat Agent for Awaio booking data
 
-## Översikt
-Skapa en konversationsagent som kan svara på frågor om dina bokningar på svenska.
+## Overview
+Create a conversational agent that can answer questions about your bookings.
 
 ## Setup
 
-### Alternativ 1: Med OpenAI (Kräver API Key)
+### Option 1: with OpenAI (requires an API key)
 
 ```sql
--- 1. Konfigurera OpenAI ML Engine först
+-- 1. Configure the OpenAI ML engine first
 CREATE ML_ENGINE openai_engine
 FROM openai
 USING
-  api_key = 'din-openai-api-key';
+  api_key = 'your-openai-api-key';
 
--- 2. Skapa chat-agenten
+-- 2. Create the chat agent
 CREATE MODEL awaio_chat_agent
 PREDICT answer
 USING
   engine = 'openai_engine',
   model_name = 'gpt-4',
-  prompt_template = 'Du är en hjälpsam assistent som analyserar bokningsdata.
+  prompt_template = 'You are a helpful assistant that analyses booking data.
 
-  Användaren frågar: {{question}}
+  The user asks: {{question}}
 
-  Svara på svenska och var konkret.';
+  Answer in English and be concrete.';
 ```
 
-### Alternativ 2: Med Hugging Face (Gratis)
+### Option 2: with Hugging Face (free)
 
 ```sql
--- Kräver ingen API key, använder öppen modell
+-- Needs no API key, uses an open model
 CREATE MODEL awaio_chat_agent
 PREDICT answer
 USING
@@ -40,10 +40,10 @@ USING
   input_column = 'question';
 ```
 
-### Alternativ 3: Med Local LLM (Ollama)
+### Option 3: with a local LLM (Ollama)
 
 ```sql
--- Om du kör Ollama lokalt
+-- If you run Ollama locally
 CREATE ML_ENGINE ollama_engine
 FROM ollama
 USING
@@ -54,36 +54,36 @@ PREDICT answer
 USING
   engine = 'ollama_engine',
   model_name = 'llama2',
-  prompt_template = 'Svara på svenska: {{question}}';
+  prompt_template = 'Answer in English: {{question}}';
 ```
 
-## Användning
+## Usage
 
-### Enkel fråga
+### Simple question
 ```sql
 SELECT answer
 FROM awaio_chat_agent
-WHERE question = 'Hur många bokningar har vi denna vecka?'
+WHERE question = 'How many bookings do we have this week?'
 ```
 
-### Flera frågor
+### Several questions
 ```sql
 SELECT
   t.question,
   m.answer
 FROM (
-  SELECT 'Vilken veckodag har flest bokningar?' AS question
+  SELECT 'Which weekday has the most bookings?' AS question
   UNION ALL
-  SELECT 'Vilket rum är mest populärt?'
+  SELECT 'Which room is the most popular?'
   UNION ALL
-  SELECT 'Vad är genomsnittlig bokningstid?'
+  SELECT 'What is the average booking duration?'
 ) AS t
 JOIN awaio_chat_agent AS m
 ```
 
-### Fråga med faktisk data
+### Question with actual data
 ```sql
--- Kombinera faktisk statistik med AI-svar
+-- Combine actual statistics with an AI answer
 SELECT
   m.answer,
   stats.total_bookings,
@@ -95,15 +95,15 @@ JOIN (
     COUNT(DISTINCT owner_id) as unique_users
   FROM awaio_postgres.bookings
 ) AS stats
-WHERE m.question = 'Analysera vårt bokningsmönster baserat på statistiken'
+WHERE m.question = 'Analyse our booking pattern based on the statistics'
 ```
 
-## Avancerade Use Cases
+## Advanced use cases
 
-### 1. Automatisk Rapport
+### 1. Automatic report
 
 ```sql
--- Generera veckorapport
+-- Generate a weekly report
 SELECT m.answer AS weekly_report
 FROM awaio_chat_agent AS m
 JOIN (
@@ -117,18 +117,18 @@ JOIN (
   WHERE start_time >= NOW() - INTERVAL '7 days'
 ) AS stats
 WHERE m.question = CONCAT(
-  'Skapa en kort veckorapport. Denna vecka: ',
+  'Write a short weekly report. This week: ',
   CAST(stats.this_week AS VARCHAR),
-  ' bokningar. Förra veckan: ',
+  ' bookings. Last week: ',
   CAST(stats.last_week AS VARCHAR),
-  ' bokningar.'
+  ' bookings.'
 )
 ```
 
-### 2. Rekommendationer
+### 2. Recommendations
 
 ```sql
--- Få rekommendationer baserat på underutnyttjande
+-- Get recommendations based on under-use
 SELECT m.answer AS recommendations
 FROM awaio_chat_agent AS m
 JOIN (
@@ -141,13 +141,13 @@ JOIN (
   GROUP BY e.name
   HAVING COUNT(b.id) < 5
 ) AS underused
-WHERE m.question = 'Ge mig rekommendationer för underutnyttjade resurser'
+WHERE m.question = 'Give me recommendations for under-used resources'
 ```
 
-### 3. Trend-analys
+### 3. Trend analysis
 
 ```sql
--- Analysera trender
+-- Analyse trends
 SELECT m.answer AS trend_analysis
 FROM awaio_chat_agent AS m
 JOIN (
@@ -159,15 +159,15 @@ JOIN (
   GROUP BY week
   ORDER BY week
 ) AS trends
-WHERE m.question = 'Analysera trenden i bokningar de senaste 4 veckorna'
+WHERE m.question = 'Analyse the booking trend over the last 4 weeks'
 ```
 
-## Kombinera med RAG (Retrieval Augmented Generation)
+## Combining with RAG (Retrieval Augmented Generation)
 
-För att göra agenten mer intelligent kan du kombinera med en knowledge base:
+To make the agent smarter you can combine it with a knowledge base:
 
 ```sql
--- Skapa en knowledge base med dokumentation
+-- Create a knowledge base with documentation
 CREATE MODEL awaio_knowledge
 PREDICT answer
 USING
@@ -175,56 +175,56 @@ USING
   mode = 'conversational',
   user_column = 'question',
   assistant_column = 'answer',
-  prompt_template = 'Kontext om Awaio:
+  prompt_template = 'Context about Awaio:
 
-  - Vi har 57 skrivbord fördelade på 3 våningar
-  - Plan 1: 15 skrivbord
-  - Plan 2: 18 skrivbord
-  - Plan 3: 24 skrivbord
-  - Tillsammansytan: 8 skrivbord
+  - We have 57 desks spread over 3 floors
+  - Plan 1: 15 desks
+  - Plan 2: 18 desks
+  - Plan 3: 24 desks
+  - Tillsammansytan: 8 desks
 
-  Fråga: {{question}}';
+  Question: {{question}}';
 ```
 
 ## Troubleshooting
 
 ### "ML_ENGINE not found"
-**Lösning:** Skapa ML_ENGINE först för OpenAI/Ollama
+**Solution:** create the ML_ENGINE for OpenAI/Ollama first
 
 ### "API key invalid"
-**Lösning:** Kontrollera din OpenAI API key
+**Solution:** check your OpenAI API key
 
-### Långsamma svar
-**Lösning:**
-- Använd mindre modell (gpt-3.5-turbo istället för gpt-4)
-- Eller använd lokal Ollama
+### Slow answers
+**Solution:**
+- Use a smaller model (gpt-3.5-turbo instead of gpt-4)
+- Or use a local Ollama
 
-### Svar på engelska
-**Lösning:** Lägg till "Svara ALLTID på svenska" i prompt_template
+### Answers in the wrong language
+**Solution:** add "ALWAYS answer in English" (or your language) to the prompt_template
 
-## Best Practices
+## Best practices
 
-1. **Tydliga prompts**: Specificera språk och format
-2. **Begränsa context**: För stora datamängder, aggregera först
-3. **Cache resultat**: Spara vanliga frågor som VIEWs
-4. **Säkerhet**: Exponera inte känslig data i prompts
+1. **Clear prompts**: specify language and format
+2. **Limit the context**: for large amounts of data, aggregate first
+3. **Cache results**: save common questions as VIEWs
+4. **Security**: do not expose sensitive data in prompts
 
-## Nästa Steg
+## Next steps
 
-1. Välj LLM-provider (OpenAI, Hugging Face, eller Ollama)
-2. Skapa ML_ENGINE (om behövs)
-3. Skapa chat-agenten med [05_create_chat_agent.sql](05_create_chat_agent.sql)
-4. Testa med [06_use_chat_agent.sql](06_use_chat_agent.sql)
-5. Integrera i Metabase eller egen app
+1. Choose an LLM provider (OpenAI, Hugging Face or Ollama)
+2. Create the ML_ENGINE (if needed)
+3. Create the chat agent with [05_create_chat_agent.sql](05_create_chat_agent.sql)
+4. Test with [06_use_chat_agent.sql](06_use_chat_agent.sql)
+5. Integrate it into Metabase or your own app
 
-## Integration med Metabase
+## Integration with Metabase
 
-Du kan skapa "Question Cards" i Metabase som kör dessa queries:
+You can create "Question Cards" in Metabase that run these queries:
 
 ```sql
--- Metabase Question: "Veckans sammanfattning"
+-- Metabase question: "Weekly summary"
 SELECT answer FROM awaio_chat_agent
-WHERE question = 'Sammanfatta veckans bokningar'
+WHERE question = 'Summarise this week''s bookings'
 ```
 
-Detta skapar en auto-genererad text-widget i din dashboard! 📊
+This creates an auto-generated text widget in your dashboard! 📊

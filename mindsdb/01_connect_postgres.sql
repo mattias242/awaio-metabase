@@ -1,5 +1,5 @@
--- Steg 1: Anslut MindsDB till PostgreSQL
--- Kör denna SQL i MindsDB Web UI (http://localhost:47334)
+-- Step 1: Connect MindsDB to PostgreSQL
+-- Run this SQL in the MindsDB Web UI (http://localhost:47334)
 
 CREATE DATABASE awaio_postgres
 WITH ENGINE = 'postgres',

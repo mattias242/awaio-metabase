@@ -1,56 +1,56 @@
 # Contributing to Awaio
 
-Vi använder **Trunk-Based Development** med **Test-Driven Development (TDD)** för att säkerställa hög kodkvalitet och snabb iteration.
+We use **Trunk-Based Development** with **Test-Driven Development (TDD)** to keep code quality high and iteration fast.
 
 ## 🌳 Trunk-Based Development Workflow
 
-### Principer
+### Principles
 
-1. **En huvudgren (main/trunk)** - All kod mergas direkt till `main`
-2. **Korta feature branches** - Max 1-2 dagar, oftast några timmar
-3. **Små, frekventa commits** - Merga tidigt och ofta
-4. **Feature flags** - För ofärdig funktionalitet
-5. **CI/CD pipeline** - Automatiska tester vid varje commit
-6. **Fast feedback** - Tester körs på < 10 minuter
+1. **One main branch (main/trunk)** - all code is merged directly to `main`
+2. **Short feature branches** - at most 1-2 days, usually a few hours
+3. **Small, frequent commits** - merge early and often
+4. **Feature flags** - for unfinished functionality
+5. **CI/CD pipeline** - automatic tests on every commit
+6. **Fast feedback** - tests run in < 10 minutes
 
 ### Branching Strategy
 
 ```
 main (trunk)
   ↑
-  └── feature/add-booking-validation (kort-levande, < 2 dagar)
-  └── fix/database-connection-pool (kort-levande)
+  └── feature/add-booking-validation (short-lived, < 2 days)
+  └── fix/database-connection-pool (short-lived)
 ```
 
-**Undvik:**
-- ❌ Långlivade feature branches
+**Avoid:**
+- ❌ Long-lived feature branches
 - ❌ Git Flow (develop, release branches)
-- ❌ Stora merge requests med hundratals rader
+- ❌ Large merge requests with hundreds of lines
 
-**Gör istället:**
-- ✅ Små pull requests (< 400 rader)
-- ✅ Merge till main minst en gång per dag
-- ✅ Använd feature flags för ofärdig funktionalitet
+**Do instead:**
+- ✅ Small pull requests (< 400 lines)
+- ✅ Merge to main at least once a day
+- ✅ Use feature flags for unfinished functionality
 
 ## 🧪 Test-Driven Development (TDD)
 
 ### Red-Green-Refactor Cycle
 
-1. **🔴 Red** - Skriv ett test som failar
-2. **🟢 Green** - Skriv minimal kod för att få testet att passa
-3. **🔵 Refactor** - Förbättra koden utan att ändra beteende
-4. **Repeat** - Gå tillbaka till steg 1
+1. **🔴 Red** - write a test that fails
+2. **🟢 Green** - write the minimal code to make the test pass
+3. **🔵 Refactor** - improve the code without changing behaviour
+4. **Repeat** - go back to step 1
 
-### TDD Workflow för ny funktionalitet
+### TDD workflow for new functionality
 
 ```bash
-# 1. Skapa en feature branch från main
+# 1. Create a feature branch from main
 git checkout main
 git pull origin main
 git checkout -b feature/add-entity-validation
 
-# 2. Skriv test FÖRST (Red)
-# Skapa tests/unit/test_entity_validation.py
+# 2. Write the test FIRST (Red)
+# Create tests/unit/test_entity_validation.py
 cat > tests/unit/test_entity_validation.py << 'EOF'
 def test_entity_name_cannot_be_empty():
     entity = Entity(name="")
@@ -58,21 +58,21 @@ def test_entity_name_cannot_be_empty():
     assert "name cannot be empty" in entity.errors
 EOF
 
-# 3. Kör testet - det ska faila (Red)
+# 3. Run the test - it should fail (Red)
 pytest tests/unit/test_entity_validation.py -v
 # FAIL - Entity class doesn't exist yet
 
-# 4. Skriv minimal implementation (Green)
-# Implementera Entity class i entity.py
+# 4. Write a minimal implementation (Green)
+# Implement the Entity class in entity.py
 
-# 5. Kör testet igen - det ska passa (Green)
+# 5. Run the test again - it should pass (Green)
 pytest tests/unit/test_entity_validation.py -v
 # PASS - Test passes!
 
-# 6. Refactor (om nödvändigt)
-# Förbättra kod, kör tester igen
+# 6. Refactor (if needed)
+# Improve the code, run the tests again
 
-# 7. Commit med test + implementation
+# 7. Commit test + implementation
 git add tests/unit/test_entity_validation.py entity.py
 git commit -m "Add entity name validation
 
@@ -82,50 +82,50 @@ git commit -m "Add entity name validation
 
 TDD: Red-Green-Refactor cycle"
 
-# 8. Push och skapa PR
+# 8. Push and create a PR
 git push -u origin feature/add-entity-validation
 gh pr create --title "Add entity name validation" --body "Implements validation for entity names following TDD"
 ```
 
-### Test-struktur
+### Test structure
 
 ```
 tests/
-├── unit/           # Snabba, isolerade tester (< 100ms per test)
-│   ├── api/        # API client tester
-│   ├── database/   # Database layer tester
-│   └── chat_app/   # Chat app tester
-├── integration/    # Tester med databas/externa services (< 1s per test)
-└── e2e/           # End-to-end tester (< 10s per test)
+├── unit/           # Fast, isolated tests (< 100ms per test)
+│   ├── api/        # API client tests
+│   ├── database/   # Database layer tests
+│   └── chat_app/   # Chat app tests
+├── integration/    # Tests against the database/external services (< 1s per test)
+└── e2e/           # End-to-end tests (< 10s per test)
 ```
 
-### Skriva bra tester
+### Writing good tests
 
 **AAA Pattern:**
 ```python
 def test_booking_creation():
-    # Arrange - Sätt upp test data
+    # Arrange - set up test data
     user = create_test_user()
     entity = create_test_entity()
 
-    # Act - Utför operationen
+    # Act - perform the operation
     booking = create_booking(user, entity, start_time, end_time)
 
-    # Assert - Verifiera resultatet
+    # Assert - verify the result
     assert booking.owner_id == user.id
     assert booking.entity_id == entity.id
 ```
 
 **Test naming:**
 ```python
-# ✅ Bra - beskriver vad som testas och förväntat beteende
+# ✅ Good - describes what is tested and the expected behaviour
 def test_booking_creation_fails_when_entity_is_already_booked():
     pass
 
 def test_user_authentication_returns_token_on_success():
     pass
 
-# ❌ Dåligt - vaga, otydliga namn
+# ❌ Bad - vague, unclear names
 def test_booking():
     pass
 
@@ -135,45 +135,45 @@ def test_auth():
 
 ## 📋 Pull Request Process
 
-### 1. Innan du skapar PR
+### 1. Before you create a PR
 
 ```bash
-# Kör alla tester lokalt
+# Run all tests locally
 pytest
 
-# Kör linters
+# Run linters
 black .
 flake8 .
 isort .
 
-# Kör pre-commit hooks
+# Run pre-commit hooks
 pre-commit run --all-files
 ```
 
 ### 2. PR Checklist
 
-- [ ] **Tester skrivna FÖRE implementation** (TDD)
-- [ ] Alla tester passar (`pytest`)
+- [ ] **Tests written BEFORE the implementation** (TDD)
+- [ ] All tests pass (`pytest`)
 - [ ] Code coverage ≥ 80% (`pytest --cov`)
-- [ ] Linters passa (black, flake8, isort)
-- [ ] PR är < 400 rader kod
-- [ ] Commit messages är tydliga
-- [ ] Documentation uppdaterad (om relevant)
+- [ ] Linters pass (black, flake8, isort)
+- [ ] PR is < 400 lines of code
+- [ ] Commit messages are clear
+- [ ] Documentation updated (if relevant)
 
 ### 3. PR Template
 
 ```markdown
-## Beskrivning
-Kort beskrivning av vad PR:en gör.
+## Description
+Short description of what the PR does.
 
 ## TDD Approach
-- [ ] Tester skrivna först
-- [ ] Red-Green-Refactor cycle följd
+- [ ] Tests written first
+- [ ] Red-Green-Refactor cycle followed
 - [ ] Test coverage: XX%
 
-## Typ av ändring
+## Type of change
 - [ ] Bug fix
-- [ ] Ny feature
+- [ ] New feature
 - [ ] Refactoring
 - [ ] Documentation
 
@@ -191,71 +191,71 @@ Kort beskrivning av vad PR:en gör.
 
 ### 4. CI/CD Pipeline
 
-När du pushar kod körs automatiskt:
+When you push code, these run automatically:
 
-1. **Unit Tests** - Alla unit tester (< 1 min)
-2. **Integration Tests** - Tester mot databas (< 2 min)
-3. **Linting** - Code quality checks (< 1 min)
+1. **Unit Tests** - all unit tests (< 1 min)
+2. **Integration Tests** - tests against the database (< 2 min)
+3. **Linting** - code quality checks (< 1 min)
 4. **Security Scan** - Bandit, Safety (< 1 min)
-5. **Docker Build** - Verifiera att containers bygger (< 3 min)
+5. **Docker Build** - verify that the containers build (< 3 min)
 
-**Total CI time: < 10 minuter**
+**Total CI time: < 10 minutes**
 
-### 5. Merge till Main
+### 5. Merging to Main
 
-PR kan mergas när:
-- ✅ Alla CI checks är gröna
-- ✅ Minst 80% code coverage
-- ✅ Code review godkänd (om configured)
-- ✅ Inga merge conflicts
+A PR can be merged when:
+- ✅ All CI checks are green
+- ✅ At least 80% code coverage
+- ✅ Code review approved (if configured)
+- ✅ No merge conflicts
 
 ```bash
-# Squash merge (rekommenderat för små PRs)
+# Squash merge (recommended for small PRs)
 gh pr merge --squash --delete-branch
 
-# Eller via GitHub UI
+# Or via the GitHub UI
 ```
 
 ## 🔧 Development Setup
 
-### 1. Klona repo och installera dependencies
+### 1. Clone the repo and install dependencies
 
 ```bash
-git clone https://github.com/mattias242/awaio.git
-cd awaio
+git clone https://github.com/mattias242/awaio-metabase.git
+cd awaio-metabase
 pip install -r requirements.txt
 ```
 
-### 2. Installera pre-commit hooks
+### 2. Install pre-commit hooks
 
 ```bash
 pip install pre-commit
 pre-commit install
 ```
 
-Detta kör automatiskt:
-- Pytest vid varje commit
+This runs automatically:
+- Pytest on every commit
 - Code formatting (black, isort)
 - Linting (flake8)
 - Security checks (bandit)
 
-### 3. Kör tester
+### 3. Run tests
 
 ```bash
-# Alla tester
+# All tests
 pytest
 
-# Endast unit tester
+# Unit tests only
 pytest tests/unit -v
 
-# Med coverage
+# With coverage
 pytest --cov --cov-report=html
 
-# Watch mode (kör tester vid varje fil-ändring)
+# Watch mode (runs tests on every file change)
 pytest-watch
 ```
 
-### 4. Kör linters
+### 4. Run linters
 
 ```bash
 # Format code
@@ -271,13 +271,13 @@ mypy .
 
 ## 📊 Code Coverage
 
-Vi siktar på **≥ 80% code coverage**.
+We aim for **≥ 80% code coverage**.
 
 ```bash
-# Generera coverage report
+# Generate a coverage report
 pytest --cov --cov-report=html
 
-# Öppna rapporten
+# Open the report
 open htmlcov/index.html
 ```
 
@@ -290,7 +290,7 @@ open htmlcov/index.html
 
 ### GitHub Actions Workflow
 
-Varje push till `main` eller PR triggar:
+Every push to `main` or PR triggers:
 
 ```yaml
 jobs:
@@ -303,7 +303,7 @@ jobs:
 
 ### Local CI Simulation
 
-Kör samma checks lokalt innan du pushar:
+Run the same checks locally before you push:
 
 ```bash
 # Run full CI pipeline locally
@@ -312,10 +312,10 @@ Kör samma checks lokalt innan du pushar:
 
 ## 🔐 Security
 
-- **Secrets** - Aldrig committa secrets (`.env`, API keys)
-- **Dependencies** - Safety scan körs automatiskt
-- **Code** - Bandit scan för säkerhetsproblem
-- **Pre-commit** - Detect private keys hook
+- **Secrets** - never commit secrets (`.env`, API keys)
+- **Dependencies** - a Safety scan runs automatically
+- **Code** - Bandit scan for security issues
+- **Pre-commit** - detect-private-keys hook
 
 ## 📝 Commit Messages
 
@@ -331,14 +331,14 @@ Kör samma checks lokalt innan du pushar:
 
 ### Types
 
-- `feat`: Ny funktionalitet
-- `fix`: Buggfix
-- `refactor`: Kod-refactoring (inget nytt beteende)
-- `test`: Lägg till eller ändra tester
+- `feat`: New functionality
+- `fix`: Bug fix
+- `refactor`: Code refactoring (no new behaviour)
+- `test`: Add or change tests
 - `docs`: Documentation
 - `chore`: Build, dependencies, tooling
 
-### Exempel
+### Example
 
 ```
 feat(api): Add entity validation
@@ -355,26 +355,26 @@ Test coverage: 95%
 
 ### DO ✅
 
-1. **Skriv tester först** - TDD approach
-2. **Små commits** - En logisk ändring per commit
-3. **Merge ofta** - Minst en gång per dag till main
-4. **Code review** - Granska din egen kod innan PR
-5. **Feature flags** - För ofärdig funktionalitet
-6. **Update docs** - Håll dokumentation synkad
+1. **Write tests first** - TDD approach
+2. **Small commits** - one logical change per commit
+3. **Merge often** - at least once a day to main
+4. **Code review** - review your own code before the PR
+5. **Feature flags** - for unfinished functionality
+6. **Update docs** - keep the documentation in sync
 
 ### DON'T ❌
 
-1. **Stora PRs** - > 400 rader är för stort
-2. **Skipping tests** - "Jag lägger till tester senare"
-3. **Långlivade branches** - > 2 dagar är för länge
-4. **Breaking main** - Main ska ALLTID vara deploybar
-5. **Copy-paste** - Refactor istället
-6. **Commented code** - Ta bort, inte kommentera
+1. **Large PRs** - > 400 lines is too big
+2. **Skipping tests** - "I'll add tests later"
+3. **Long-lived branches** - > 2 days is too long
+4. **Breaking main** - main must ALWAYS be deployable
+5. **Copy-paste** - refactor instead
+6. **Commented-out code** - delete it, don't comment it out
 
 ## 🐛 Bug Fix Workflow
 
 ```bash
-# 1. Skapa test som reproducerar buggen (Red)
+# 1. Write a test that reproduces the bug (Red)
 cat > tests/unit/test_bug_fix.py << 'EOF'
 def test_booking_overlapping_detection():
     # This test reproduces the bug
@@ -383,14 +383,14 @@ def test_booking_overlapping_detection():
     assert has_overlap(booking1, booking2)  # Currently fails!
 EOF
 
-# 2. Kör testet - det ska faila
+# 2. Run the test - it should fail
 pytest tests/unit/test_bug_fix.py -v
 # FAIL - Bug confirmed
 
-# 3. Fixa buggen (Green)
-# Implementera fix i relevanta filer
+# 3. Fix the bug (Green)
+# Implement the fix in the relevant files
 
-# 4. Kör testet - det ska passa
+# 4. Run the test - it should pass
 pytest tests/unit/test_bug_fix.py -v
 # PASS - Bug fixed!
 
@@ -407,20 +407,20 @@ Fixes #123"
 
 ## 🌟 Code Review Guidelines
 
-### Som Reviewer
+### As a reviewer
 
-- ✅ Verifiera att tester är skrivna FÖRE implementation
-- ✅ Kolla att test coverage är ≥ 80%
-- ✅ Läs testerna först för att förstå intent
-- ✅ Kör koden lokalt om möjligt
-- ✅ Ge konstruktiv feedback
+- ✅ Verify that the tests were written BEFORE the implementation
+- ✅ Check that test coverage is ≥ 80%
+- ✅ Read the tests first to understand the intent
+- ✅ Run the code locally if possible
+- ✅ Give constructive feedback
 
-### Som Author
+### As an author
 
-- ✅ Self-review innan du begär review
-- ✅ Svara på feedback snabbt
-- ✅ Förklara komplexa beslut i kommentarer
-- ✅ Håll PR:en liten och fokuserad
+- ✅ Self-review before requesting a review
+- ✅ Respond to feedback quickly
+- ✅ Explain complex decisions in comments
+- ✅ Keep the PR small and focused
 
 ## 📚 Resources
 
@@ -429,11 +429,11 @@ Fixes #123"
 - [Pytest Documentation](https://docs.pytest.org/)
 - [GitHub Actions](https://docs.github.com/en/actions)
 
-## 💬 Frågor?
+## 💬 Questions?
 
-Om du har frågor om development workflow:
-1. Kolla denna guide först
-2. Sök i closed issues
-3. Öppna en discussion på GitHub
+If you have questions about the development workflow:
+1. Check this guide first
+2. Search the closed issues
+3. Open a discussion on GitHub
 
-**Lycka till med din contribution! 🚀**
+**Good luck with your contribution! 🚀**

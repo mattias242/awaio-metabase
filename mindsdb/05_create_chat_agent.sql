@@ -1,24 +1,24 @@
--- Skapa en AI-agent som kan chatta om bokningsdata
--- Kräver OpenAI API key eller annan LLM-integration
+-- Create an AI agent that can chat about booking data
+-- Requires an OpenAI API key or another LLM integration
 
--- STEG 1: Skapa LLM-modell för konversation
+-- STEP 1: Create an LLM model for conversation
 CREATE MODEL awaio_chat_agent
 PREDICT answer
 USING
   engine = 'openai',
   model_name = 'gpt-4',
-  prompt_template = 'Du är en hjälpsam assistent som analyserar bokningsdata för Awaio.
+  prompt_template = 'You are a helpful assistant that analyses booking data for Awaio.
 
-  Kontext om databasen:
-  - Tabellen "bookings" innehåller alla bokningar med start_time, end_time, owner_id, entity_id
-  - Tabellen "entities" innehåller bokningsbara resurser (skrivbord, rum, skåp) med name och group_tag
-  - Tabellen "users" innehåller användarinformation
+  Database context:
+  - The "bookings" table holds all bookings with start_time, end_time, owner_id, entity_id
+  - The "entities" table holds bookable resources (desks, rooms, lockers) with name and group_tag
+  - The "users" table holds user information
 
-  Användaren frågar: {{question}}
+  The user asks: {{question}}
 
-  Svara på svenska och var konkret. Om du behöver data, förklara vilken SQL-query som behövs.';
+  Answer in English and be specific. If you need data, explain which SQL query is needed.';
 
--- ALTERNATIV: Använd öppen modell via Hugging Face
+-- ALTERNATIVE: Use an open model via Hugging Face
 -- CREATE MODEL awaio_chat_agent
 -- PREDICT answer
 -- USING

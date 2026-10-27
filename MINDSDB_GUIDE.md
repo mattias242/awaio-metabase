@@ -1,19 +1,19 @@
-# MindsDB Guide för Awaio
+# MindsDB Guide for Awaio
 
-MindsDB är nu tillgänglig och kopplad till din PostgreSQL-databas. Du kan använda MindsDB för att skapa ML-modeller direkt från dina bokningsdata.
+MindsDB is available and connected to your PostgreSQL database. You can use MindsDB to create ML models directly from your booking data.
 
-## Åtkomst
+## Access
 
 - **MindsDB Web UI**: http://localhost:47334
 - **MySQL API**: localhost:47335
 - **MongoDB API**: localhost:47336
 
-## Ansluta till PostgreSQL
+## Connecting to PostgreSQL
 
-### Via Web UI (Rekommenderat)
+### Via the Web UI (recommended)
 
-1. Öppna http://localhost:47334
-2. Klicka på "Add Database" eller kör följande SQL i MindsDB Editor:
+1. Open http://localhost:47334
+2. Click "Add Database" or run the following SQL in the MindsDB Editor:
 
 ```sql
 CREATE DATABASE awaio_postgres
@@ -27,14 +27,14 @@ PARAMETERS = {
 };
 ```
 
-3. Verifiera anslutningen:
+3. Verify the connection:
 ```sql
 SHOW DATABASES;
 ```
 
-## Exempel: Prediktera bokningar
+## Example: predicting bookings
 
-### 1. Skapa en ML-modell för att prediktera mest populära skrivbord
+### 1. Create an ML model that predicts the most popular desks
 
 ```sql
 CREATE MODEL booking_predictor
@@ -54,7 +54,7 @@ PREDICT booking_count
 USING engine = 'lightwood';
 ```
 
-### 2. Använd modellen för att förutsäga bokningar
+### 2. Use the model to predict bookings
 
 ```sql
 SELECT desk_name, booking_count
@@ -64,7 +64,7 @@ ORDER BY booking_count DESC
 LIMIT 10;
 ```
 
-### 3. Tidsserie-modell för att förutsäga framtida bokningar
+### 3. Time series model to predict future bookings
 
 ```sql
 CREATE MODEL booking_forecast
@@ -83,7 +83,7 @@ HORIZON 14
 USING engine = 'statsforecast';
 ```
 
-### 4. Kör prediktion för nästa 14 dagar
+### 4. Run a prediction for the next 14 days
 
 ```sql
 SELECT booking_date, daily_bookings
@@ -91,34 +91,34 @@ FROM booking_forecast
 WHERE booking_date > LATEST;
 ```
 
-## Användbara queries
+## Useful queries
 
-### Se alla skrivbord och deras bokningsfrekvens
+### See all desks
 ```sql
 SELECT * FROM awaio_postgres.entities WHERE group_tag = 'desk';
 ```
 
-### Se alla bokningar
+### See all bookings
 ```sql
 SELECT * FROM awaio_postgres.bookings LIMIT 100;
 ```
 
-### Kontrollera modellstatus
+### Check the model status
 ```sql
 SHOW MODELS;
 ```
 
-### Få information om en modell
+### Get information about a model
 ```sql
 DESCRIBE booking_predictor;
 ```
 
-## Använd MindsDB via Python
+## Using MindsDB from Python
 
 ```python
 import mysql.connector
 
-# Anslut till MindsDB via MySQL API
+# Connect to MindsDB via the MySQL API
 connection = mysql.connector.connect(
     host='localhost',
     port=47335,
@@ -128,7 +128,7 @@ connection = mysql.connector.connect(
 
 cursor = connection.cursor()
 
-# Anslut till PostgreSQL via MindsDB
+# Connect to PostgreSQL via MindsDB
 cursor.execute("""
     CREATE DATABASE awaio_postgres
     WITH ENGINE = 'postgres',
@@ -141,7 +141,7 @@ cursor.execute("""
     };
 """)
 
-# Skapa en ML-modell
+# Create an ML model
 cursor.execute("""
     CREATE MODEL booking_predictor
     FROM awaio_postgres (
@@ -151,7 +151,7 @@ cursor.execute("""
     PREDICT status;
 """)
 
-# Använd modellen
+# Use the model
 cursor.execute("""
     SELECT entity_id, status, status_confidence
     FROM booking_predictor
@@ -166,10 +166,10 @@ cursor.close()
 connection.close()
 ```
 
-## Avancerade användningsfall
+## Advanced use cases
 
-### 1. Anomali-detektion
-Identifiera ovanliga bokningsmönster:
+### 1. Anomaly detection
+Identify unusual booking patterns:
 
 ```sql
 CREATE ANOMALY DETECTOR booking_anomalies
@@ -184,7 +184,7 @@ FROM awaio_postgres (
 USING engine = 'anomaly';
 ```
 
-### 2. Klassificera bokningstyper
+### 2. Classify booking types
 ```sql
 CREATE MODEL booking_classifier
 FROM awaio_postgres (
@@ -198,7 +198,7 @@ FROM awaio_postgres (
 PREDICT category;
 ```
 
-### 3. Rekommendationssystem för skrivbord
+### 3. Desk recommendation system
 ```sql
 CREATE MODEL desk_recommender
 FROM awaio_postgres (
@@ -215,24 +215,24 @@ PREDICT desk_name
 USING engine = 'lightwood';
 ```
 
-## Felsökning
+## Troubleshooting
 
-### Kontrollera att MindsDB körs
+### Check that MindsDB is running
 ```bash
 docker ps | grep mindsdb
 ```
 
-### Se MindsDB-loggar
+### See the MindsDB logs
 ```bash
 docker logs awaio-mindsdb
 ```
 
-### Starta om MindsDB
+### Restart MindsDB
 ```bash
 docker-compose restart mindsdb
 ```
 
-## Resurser
+## Resources
 
 - [MindsDB Documentation](https://docs.mindsdb.com/)
 - [MindsDB SQL Syntax](https://docs.mindsdb.com/sql/overview)

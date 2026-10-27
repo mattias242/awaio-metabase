@@ -1,12 +1,12 @@
 # MindsDB Quickstart - Awaio Predictions
 
-## 🚀 Snabbstart (5 minuter)
+## 🚀 Quick start (5 minutes)
 
-### 1. Öppna MindsDB Web UI
-Öppna i din webbläsare: **http://localhost:47334**
+### 1. Open the MindsDB Web UI
+Open in your browser: **http://localhost:47334**
 
-### 2. Anslut till PostgreSQL
-Kopiera och kör [01_connect_postgres.sql](01_connect_postgres.sql) i SQL Editor:
+### 2. Connect to PostgreSQL
+Copy and run [01_connect_postgres.sql](01_connect_postgres.sql) in the SQL Editor:
 
 ```sql
 CREATE DATABASE awaio_postgres
@@ -20,33 +20,33 @@ PARAMETERS = {
 };
 ```
 
-**Förväntat resultat:** "Query successfully completed"
+**Expected result:** "Query successfully completed"
 
-### 3. Testa anslutningen
+### 3. Test the connection
 
-**VIKTIGT:** MindsDB Web UI kör bara EN query åt gången!
+**IMPORTANT:** the MindsDB Web UI only runs ONE query at a time!
 
-Kör varje fil separat:
+Run each file separately:
 
-**A. Visa databaser** - Kör [02a_show_databases.sql](02a_show_databases.sql):
+**A. Show databases** - run [02a_show_databases.sql](02a_show_databases.sql):
 ```sql
 SHOW DATABASES
 ```
-**Du ska se:** `awaio_postgres` i listan
+**You should see:** `awaio_postgres` in the list
 
-**B. Testa läsa bokningar** - Kör [02b_test_bookings.sql](02b_test_bookings.sql):
+**B. Test reading bookings** - run [02b_test_bookings.sql](02b_test_bookings.sql):
 ```sql
 SELECT * FROM awaio_postgres.bookings LIMIT 10
 ```
-**Du ska se:** 10 bokningar från din databas
+**You should see:** 10 bookings from your database
 
-**C. Visa tabeller** - Kör [02c_show_tables.sql](02c_show_tables.sql):
+**C. Show tables** - run [02c_show_tables.sql](02c_show_tables.sql):
 ```sql
 SHOW TABLES FROM awaio_postgres
 ```
-**Du ska se:** bookings, entities, users, communities, etc.
+**You should see:** bookings, entities, users, communities, etc.
 
-**D. Se statistik** - Kör [02d_booking_stats.sql](02d_booking_stats.sql):
+**D. See statistics** - run [02d_booking_stats.sql](02d_booking_stats.sql):
 ```sql
 SELECT
   COUNT(*) as total_bookings,
@@ -57,8 +57,8 @@ SELECT
 FROM awaio_postgres.bookings
 ```
 
-### 4. Skapa din första ML-modell
-Kör [03_first_prediction_model.sql](03_first_prediction_model.sql):
+### 4. Create your first ML model
+Run [03_first_prediction_model.sql](03_first_prediction_model.sql):
 
 ```sql
 CREATE MODEL booking_forecast
@@ -79,29 +79,29 @@ USING
   horizon = 14;
 ```
 
-**OBS:** Detta tar 2-5 minuter! Vänta tills det är klart.
+**NOTE:** this takes 2-5 minutes! Wait until it is finished.
 
-### 5. Kontrollera träningsstatus
+### 5. Check the training status
 ```sql
 DESCRIBE booking_forecast;
 ```
 
-**Leta efter:** `STATUS: complete` eller `STATUS: generating`
+**Look for:** `STATUS: complete` or `STATUS: generating`
 
-### 6. Använd predictions!
-När modellen är klar, kör [04_use_predictions.sql](04_use_predictions.sql):
+### 6. Use the predictions!
+When the model is ready, run [04_use_predictions.sql](04_use_predictions.sql):
 
 ```sql
 SELECT
   booking_date,
   CASE day_of_week
-    WHEN 0 THEN 'Söndag'
-    WHEN 1 THEN 'Måndag'
-    WHEN 2 THEN 'Tisdag'
-    WHEN 3 THEN 'Onsdag'
-    WHEN 4 THEN 'Torsdag'
-    WHEN 5 THEN 'Fredag'
-    WHEN 6 THEN 'Lördag'
+    WHEN 0 THEN 'Sunday'
+    WHEN 1 THEN 'Monday'
+    WHEN 2 THEN 'Tuesday'
+    WHEN 3 THEN 'Wednesday'
+    WHEN 4 THEN 'Thursday'
+    WHEN 5 THEN 'Friday'
+    WHEN 6 THEN 'Saturday'
   END as weekday,
   booking_count as predicted_bookings
 FROM booking_forecast
@@ -110,15 +110,15 @@ ORDER BY booking_date
 LIMIT 14;
 ```
 
-**Resultat:** Förutsägelser för bokningar de nästa 14 dagarna! 🎉
+**Result:** booking forecasts for the next 14 days! 🎉
 
 ---
 
-## 📊 Fler Avancerade Modeller
+## 📊 More advanced models
 
-När du är klar med grunderna, prova dessa:
+Once you are done with the basics, try these:
 
-### Kapacitetsprediktion per timme
+### Hourly capacity prediction
 ```sql
 CREATE MODEL hourly_capacity
 FROM awaio_postgres
@@ -136,9 +136,9 @@ PREDICT desks_in_use
 USING engine = 'lightwood';
 ```
 
-### Användning:
+### Usage:
 ```sql
--- Kapacitet imorgon
+-- Capacity tomorrow
 SELECT
   time_slot,
   hour_of_day,
@@ -149,7 +149,7 @@ WHERE time_slot::date = CURRENT_DATE + INTERVAL '1 day'
 ORDER BY hour_of_day;
 ```
 
-### Populära skrivbord nästa vecka
+### Popular desks next week
 ```sql
 CREATE MODEL desk_popularity
 FROM awaio_postgres
@@ -168,9 +168,9 @@ PREDICT weekly_bookings
 USING engine = 'lightwood';
 ```
 
-### Användning:
+### Usage:
 ```sql
--- Top 10 nästa vecka
+-- Top 10 next week
 SELECT
   desk_name,
   weekly_bookings as predicted_bookings
@@ -185,28 +185,28 @@ LIMIT 10;
 ## 🔧 Troubleshooting
 
 ### "Connection failed"
-- Kontrollera att PostgreSQL körs: `docker-compose ps postgres`
-- Verifiera att båda containers är på samma nätverk
+- Check that PostgreSQL is running: `docker-compose ps postgres`
+- Verify that both containers are on the same network
 
 ### "Model training failed"
-- Kontrollera att du har tillräckligt med data (minst 30 dagar rekommenderas)
-- Se detaljer: `DESCRIBE booking_forecast;`
+- Check that you have enough data (at least 30 days is recommended)
+- See the details: `DESCRIBE booking_forecast;`
 
-### Modellen tar för lång tid
-- Första träningen kan ta 2-10 minuter beroende på datamängd
-- Prova med mindre dataset genom att öka INTERVAL-filtret
+### The model takes too long
+- The first training can take 2-10 minutes depending on the amount of data
+- Try a smaller dataset by shortening the INTERVAL window
 
 ### "Table not found"
-- Dubbelkolla att `awaio_postgres` är prefix: `awaio_postgres.bookings`
-- Lista tabeller: `SHOW TABLES FROM awaio_postgres;`
+- Double-check that `awaio_postgres` is the prefix: `awaio_postgres.bookings`
+- List the tables: `SHOW TABLES FROM awaio_postgres;`
 
 ---
 
-## 📚 Nästa Steg
+## 📚 Next steps
 
-1. ✅ Skapa fler modeller (se README.md)
-2. ✅ Integrera predictions i Metabase
-3. ✅ Sätt upp automatisk retraining
-4. ✅ Exportera predictions till PostgreSQL för visualisering
+1. ✅ Create more models (see README.md)
+2. ✅ Integrate the predictions into Metabase
+3. ✅ Set up automatic retraining
+4. ✅ Export predictions to PostgreSQL for visualisation
 
-Se [README.md](README.md) för fullständig dokumentation och alla tillgängliga modeller.
+See [README.md](README.md) for the full documentation and all available models.

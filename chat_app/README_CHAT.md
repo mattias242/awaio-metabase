@@ -1,119 +1,119 @@
 # Awaio AI Chat App 💬
 
-En webbaserad chattapplikation för att prata med din bokningsdata via AI-agenter (Google Gemini eller OpenAI).
+A web-based chat application for talking to your booking data via AI agents (Google Gemini or OpenAI).
 
-## Översikt
+## Overview
 
-Streamlit-baserad chat-interface som kopplar till MindsDB och låter dig ställa frågor på naturligt språk om ditt bokningssystem.
+A Streamlit-based chat interface that connects to MindsDB and lets you ask natural-language questions about your booking system.
 
-## Snabbstart
+## Quick start
 
-### 1. Starta Chat-appen
+### 1. Start the chat app
 
 ```bash
-# Från Awaio root-katalogen
+# From the Awaio root directory
 docker-compose up -d chat
 ```
 
-### 2. Öppna i webbläsaren
+### 2. Open it in the browser
 
-Gå till: **http://localhost:8501**
+Go to: **http://localhost:8501**
 
-### 3. Börja chatta!
+### 3. Start chatting!
 
-Ställ frågor som:
-- "Vilken veckodag har flest bokningar?"
-- "Vilket skrivbord är mest populärt?"
-- "Ge mig en veckorapport"
-- "Vilka resurser är underutnyttjade?"
+Ask questions such as:
+- "Which weekday has the most bookings?"
+- "Which desk is the most popular?"
+- "Give me a weekly report"
+- "Which resources are under-used?"
 
-## Förutsättningar
+## Prerequisites
 
-### MindsDB måste vara konfigurerad
+### MindsDB must be configured
 
-Innan du kan använda chat-appen måste du ha:
+Before you can use the chat app you need to have:
 
-1. ✅ Skapat Gemini ML Engine
-2. ✅ Skapat `awaio_gemini_agent` modell
+1. ✅ Created the Gemini ML engine
+2. ✅ Created the `awaio_gemini_agent` model
 
-Se [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md) för fullständig setup.
+See [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md) for the full setup.
 
-### Snabb verifiering
+### Quick check
 
-Kontrollera att agenten fungerar i MindsDB Web UI (http://localhost:47334):
+Check that the agent works in the MindsDB Web UI (http://localhost:47334):
 
 ```sql
 SELECT answer
 FROM awaio_gemini_agent
-WHERE question = 'Hej, fungerar du?'
+WHERE question = 'Hello, are you working?'
 ```
 
-Om detta ger ett svar på svenska är du redo att använda chat-appen!
+If this gives you an answer, you are ready to use the chat app!
 
-## Funktioner
+## Features
 
-### 🎨 Gränssnitt
+### 🎨 Interface
 
-- **ChatGPT-liknande UI**: Moderna chat-bubblor med tidsstämplar
-- **Konversationshistorik**: Alla frågor och svar sparas i sessionen
-- **Exempel-frågor**: Klickbara förslag när du startar en ny chat
-- **Agent-väljare**: Byt mellan Gemini och OpenAI i sidopanelen
+- **ChatGPT-like UI**: modern chat bubbles with timestamps
+- **Conversation history**: all questions and answers are kept for the session
+- **Example questions**: clickable suggestions when you start a new chat
+- **Agent picker**: switch between Gemini and OpenAI in the sidebar
 
-### 🤖 AI-Agenter
+### 🤖 AI agents
 
-Chat-appen stödjer följande agenter:
+The chat app supports the following agents:
 
-1. **Gemini Agent** (Rekommenderad)
-   - Modell: `awaio_gemini_agent`
-   - Gratis tier: 60 requests/minut
-   - Snabb och bra på svenska
+1. **Gemini Agent** (recommended)
+   - Model: `awaio_gemini_agent`
+   - Free tier: 60 requests/minute
+   - Fast and multilingual
 
 2. **OpenAI Agent**
-   - Modell: `awaio_chat_agent`
-   - Kräver OpenAI API key
-   - GPT-4 kvalitet
+   - Model: `awaio_chat_agent`
+   - Requires an OpenAI API key
+   - GPT-4 quality
 
-### 📊 Dataåtkomst
+### 📊 Data access
 
-Agenten har tillgång till:
-- **Bookings**: Alla bokningar med start_time, end_time, owner_id
-- **Entities**: Skrivbord, rum, skåp med hierarki
-- **Users**: Användarinformation
-- **57 skrivbord** fördelade på 3 våningar + Tillsammansytan
+The agent has access to:
+- **Bookings**: all bookings with start_time, end_time, owner_id
+- **Entities**: desks, rooms, lockers with their hierarchy
+- **Users**: user information (pseudonymised)
+- **57 desks** spread over 3 floors + Tillsammansytan
 
-## Användning
+## Usage
 
-### Starta/Stoppa
+### Start/stop
 
 ```bash
-# Starta chat-appen
+# Start the chat app
 docker-compose up -d chat
 
-# Stoppa chat-appen
+# Stop the chat app
 docker-compose stop chat
 
-# Se loggar
+# Show the logs
 docker-compose logs -f chat
 
-# Rebuild efter ändringar
+# Rebuild after changes
 docker-compose up -d --build chat
 ```
 
-### Byta Agent
+### Switching agent
 
-1. Öppna sidopanelen (⚙️ Inställningar)
-2. Välj agent från dropdown-menyn
-3. Fortsätt chatta (historiken bevaras)
+1. Open the sidebar (⚙️ Settings)
+2. Choose an agent from the dropdown
+3. Keep chatting (the history is kept)
 
-### Rensa Chat
+### Clearing the chat
 
-Klicka på "🗑️ Rensa chat" i sidopanelen för att börja om med en ny konversation.
+Click "🗑️ Clear chat" in the sidebar to start over with a new conversation.
 
-## Arkitektur
+## Architecture
 
 ```
 ┌──────────────┐
-│  Webbläsare  │  http://localhost:8501
+│   Browser    │  http://localhost:8501
 └──────┬───────┘
        │
        ↓
@@ -133,46 +133,46 @@ Klicka på "🗑️ Rensa chat" i sidopanelen för att börja om med en ny konve
        └─→ PostgreSQL (awaio_postgres)
 ```
 
-## Exempel Frågor
+## Example questions
 
-### Trender
+### Trends
 
-- "Vilken veckodag har flest bokningar?"
-- "Hur ser bokningsmönstret ut för de senaste 30 dagarna?"
-- "Finns det några trender jag bör känna till?"
+- "Which weekday has the most bookings?"
+- "What does the booking pattern look like for the last 30 days?"
+- "Are there any trends I should know about?"
 
-### Statistik
+### Statistics
 
-- "Hur många bokningar har vi totalt?"
-- "Vilket skrivbord är mest populärt?"
-- "Vilka dagar har minst aktivitet?"
+- "How many bookings do we have in total?"
+- "Which desk is the most popular?"
+- "Which days have the least activity?"
 
-### Rekommendationer
+### Recommendations
 
-- "Ge mig en veckorapport"
-- "Vilka resurser är underutnyttjade?"
-- "Hur kan vi förbättra resursutnyttjandet?"
+- "Give me a weekly report"
+- "Which resources are under-used?"
+- "How can we improve resource utilisation?"
 
-### Analys
+### Analysis
 
-- "Analysera veckans bokningar och ge rekommendationer"
-- "Vilka skrivbord på Plan 2 används mest?"
-- "Finns det några bokningskonflikter?"
+- "Analyse this week's bookings and give recommendations"
+- "Which desks on Plan 2 are used the most?"
+- "Are there any booking conflicts?"
 
-## Felsökning
+## Troubleshooting
 
-### Chat-appen startar inte
+### The chat app does not start
 
-**Problem**: `docker-compose up -d chat` failar
+**Problem**: `docker-compose up -d chat` fails
 
-**Lösningar**:
+**Solutions**:
 
-1. Kontrollera att MindsDB är igång:
+1. Check that MindsDB is running:
    ```bash
    docker-compose ps
    ```
 
-2. Kolla loggar:
+2. Check the logs:
    ```bash
    docker-compose logs chat
    ```
@@ -182,53 +182,53 @@ Klicka på "🗑️ Rensa chat" i sidopanelen för att börja om med en ny konve
    docker-compose up -d --build chat
    ```
 
-### "Kunde inte ansluta till MindsDB"
+### "Could not connect to MindsDB"
 
-**Problem**: Chat-appen kan inte nå MindsDB
+**Problem**: the chat app cannot reach MindsDB
 
-**Lösningar**:
+**Solutions**:
 
-1. Verifiera att MindsDB är igång:
+1. Verify that MindsDB is running:
    ```bash
    curl http://localhost:47334
    ```
 
-2. Kontrollera Docker network:
+2. Check the Docker network:
    ```bash
    docker network inspect awaio_awaio-network
    ```
 
-3. Restart båda containers:
+3. Restart both containers:
    ```bash
    docker-compose restart mindsdb chat
    ```
 
-### "Kunde inte få svar från AI-agenten"
+### "Could not get an answer from the AI agent"
 
-**Problem**: Agenten returnerar tomt svar
+**Problem**: the agent returns an empty answer
 
-**Lösningar**:
+**Solutions**:
 
-1. Verifiera att agenten är tränad:
+1. Verify that the agent is trained:
    ```sql
    DESCRIBE awaio_gemini_agent;
    ```
-   Status ska vara "complete"
+   The status should be "complete"
 
-2. Testa direkt i MindsDB Web UI:
+2. Test directly in the MindsDB Web UI:
    ```sql
    SELECT answer
    FROM awaio_gemini_agent
    WHERE question = 'Test'
    ```
 
-3. Kontrollera att Gemini API key är korrekt i ML_ENGINE
+3. Check that the Gemini API key is correct in the ML_ENGINE
 
-### Svar på engelska
+### Answers in the wrong language
 
-**Problem**: Agenten svarar på engelska trots svensk fråga
+**Problem**: the agent answers in a different language than the question
 
-**Lösning**: Uppdatera prompt_template i `awaio_gemini_agent`:
+**Solution**: update the prompt_template in `awaio_gemini_agent`:
 
 ```sql
 DROP MODEL awaio_gemini_agent;
@@ -238,64 +238,64 @@ PREDICT answer
 USING
   engine = 'gemini_engine',
   model_name = 'gemini-2.5-flash',
-  prompt_template = 'Svara UTESLUTANDE på svenska. {{question}}';
+  prompt_template = 'Answer ONLY in English. {{question}}';
 ```
 
-### Port 8501 redan används
+### Port 8501 is already in use
 
-**Problem**: Annan app kör på port 8501
+**Problem**: another app is running on port 8501
 
-**Lösning**: Ändra port i `.env`:
+**Solution**: change the port in `.env`:
 
 ```bash
 echo "CHAT_PORT=8502" >> .env
 docker-compose up -d chat
 ```
 
-Öppna sedan http://localhost:8502
+Then open http://localhost:8502
 
-## Anpassning
+## Customisation
 
-### Ändra UI-temat
+### Changing the UI theme
 
-Redigera `chat_app.py`:
+Edit `chat_app.py`:
 
 ```python
 st.set_page_config(
     page_title="Awaio AI Chat",
     page_icon="💬",
     layout="wide",
-    initial_sidebar_state="expanded"  # eller "collapsed"
+    initial_sidebar_state="expanded"  # or "collapsed"
 )
 ```
 
-### Lägga till fler agenter
+### Adding more agents
 
-1. Skapa ny agent i MindsDB (se [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md))
+1. Create a new agent in MindsDB (see [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md))
 
-2. Uppdatera `chat_app.py`:
+2. Update `chat_app.py`:
    ```python
    agent_options = {
        'awaio_gemini_agent': 'Gemini Agent',
        'awaio_chat_agent': 'OpenAI Agent',
-       'din_nya_agent': 'Min Custom Agent'
+       'your_new_agent': 'My Custom Agent'
    }
    ```
 
-3. Rebuild och restart:
+3. Rebuild and restart:
    ```bash
    docker-compose up -d --build chat
    ```
 
-### Ändra exempel-frågor
+### Changing the example questions
 
-Redigera `chat_app.py` längst ner där button-widgets skapas:
+Edit `chat_app.py` near the bottom, where the button widgets are created:
 
 ```python
-if st.button("📊 Din nya fråga?", use_container_width=True):
+if st.button("📊 Your new question?", use_container_width=True):
     st.session_state.messages.append({
         "role": "user",
-        "content": "Din fråga här",
+        "content": "Your question here",
         "timestamp": datetime.now().strftime("%H:%M:%S")
     })
     st.rerun()
@@ -303,85 +303,85 @@ if st.button("📊 Din nya fråga?", use_container_width=True):
 
 ## Development
 
-### Local Development (utan Docker)
+### Local development (without Docker)
 
 ```bash
 cd chat_app
 
-# Installera dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Sätt miljövariabler
+# Set environment variables
 export MINDSDB_HOST=localhost
 export MINDSDB_PORT=47334
 
-# Kör Streamlit
+# Run Streamlit
 streamlit run chat_app.py
 ```
 
-### Live Reload
+### Live reload
 
-Streamlit har inbyggd live reload. När du ändrar `chat_app.py` visas "Rerun" i webbläsaren.
+Streamlit has built-in live reload. When you change `chat_app.py`, "Rerun" appears in the browser.
 
 ### Debugging
 
-Lägg till debug-output i `chat_app.py`:
+Add debug output to `chat_app.py`:
 
 ```python
 st.write("Debug info:", result_df)
 ```
 
-## Säkerhet
+## Security
 
-⚠️ **Viktigt:**
+⚠️ **Important:**
 
-- Chat-appen exponerar INTE din Gemini API key
-- API keys lagras i MindsDB-containern
-- Chat-appen pratar bara med MindsDB via SQL
-- Använd ALDRIG denna setup i produktion utan autentisering
+- The chat app does NOT expose your Gemini API key
+- API keys are stored in the MindsDB container
+- The chat app only talks to MindsDB via SQL
+- NEVER use this setup in production without authentication
 
-För produktion, lägg till:
+For production, add:
 - User authentication (Streamlit Auth)
-- HTTPS (reverse proxy med nginx)
+- HTTPS (reverse proxy with nginx)
 - Rate limiting
-- Input sanitization
+- Input sanitisation
 
-## Prestanda
+## Performance
 
-### Response Times
+### Response times
 
-- **Gemini Pro**: 2-5 sekunder
-- **OpenAI GPT-4**: 3-8 sekunder
+- **Gemini Pro**: 2-5 seconds
+- **OpenAI GPT-4**: 3-8 seconds
 
-### Begränsningar
+### Limits
 
-- **Gratis Gemini**: 60 requests/minut
-- **Streamlit**: Max 1000 samtida användare (gratis)
+- **Free Gemini**: 60 requests/minute
+- **Streamlit**: max 1000 concurrent users (free)
 
-### Optimering
+### Optimisation
 
-För snabbare svar:
-1. Använd kortare prompts
-2. Begränsa datakontext
-3. Cache vanliga frågor
-4. Uppgradera till Gemini 1.5 Flash
+For faster answers:
+1. Use shorter prompts
+2. Limit the data context
+3. Cache common questions
+4. Upgrade to Gemini 1.5 Flash
 
-## Nästa Steg
+## Next steps
 
-1. ✅ Starta chat-appen: `docker-compose up -d chat`
-2. ✅ Öppna http://localhost:8501
-3. ✅ Börja chatta med din data
-4. 🚀 Integrera i din egen app
-5. 🚀 Lägg till fler AI-agenter
-6. 🚀 Skapa custom widgets och dashboards
+1. ✅ Start the chat app: `docker-compose up -d chat`
+2. ✅ Open http://localhost:8501
+3. ✅ Start chatting with your data
+4. 🚀 Integrate it into your own app
+5. 🚀 Add more AI agents
+6. 🚀 Build custom widgets and dashboards
 
 ## Support
 
-Om du stöter på problem:
+If you run into problems:
 
-1. Kolla felsökningssektionen ovan
-2. Läs [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md)
-3. Kontrollera MindsDB logs: `docker-compose logs -f mindsdb`
-4. Testa agenten direkt i MindsDB Web UI först
+1. Check the troubleshooting section above
+2. Read [GEMINI_SETUP.md](../mindsdb/GEMINI_SETUP.md)
+3. Check the MindsDB logs: `docker-compose logs -f mindsdb`
+4. Test the agent directly in the MindsDB Web UI first
 
-**Lycka till med din AI-powered chat! 🚀💬**
+**Good luck with your AI-powered chat! 🚀💬**

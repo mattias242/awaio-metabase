@@ -1,41 +1,41 @@
 # fetch_bookings.py - Automatic Entity Resolution
 
-## Översikt
+## Overview
 
-`fetch_bookings.py` har uppdaterats med automatisk entity-resolution. Om scriptet hittar bokningar som refererar till entities som inte finns i databasen, anropar det automatiskt `fetch_entities.py` för att hämta de saknade entities från API:t.
+`fetch_bookings.py` has been updated with automatic entity resolution. If the script finds bookings that refer to entities missing from the database, it automatically calls `fetch_entities.py` to fetch the missing entities from the API.
 
-## Hur det fungerar
+## How it works
 
-### Före (gammalt beteende):
+### Before (old behaviour):
 ```
-1. Hämta bokningar från API
-2. För varje bokning:
-   - Kontrollera om entity finns i databasen
-   - Om INTE: Skippa bokningen med varning ⚠
-   - Om JA: Importera bokningen ✓
-```
-
-**Problem:** Bokningar hoppas över om entities saknas.
-
-### Efter (nytt beteende):
-```
-1. Hämta bokningar från API
-2. FÖRSTA PASSET: Kontrollera alla entities
-   - Samla lista över saknade entities
-3. Om saknade entities finns:
-   - Anropa fetch_entities.py automatiskt
-   - Hämta ALLA entities från API
-   - Verifiera att saknade entities nu finns
-4. ANDRA PASSET: Importera bokningar
-   - Alla entities finns nu
-   - Inga bokningar skippas ✓
+1. Fetch bookings from the API
+2. For each booking:
+   - Check whether the entity exists in the database
+   - If NOT: skip the booking with a warning ⚠
+   - If YES: import the booking ✓
 ```
 
-**Resultat:** Inga bokningar förloras på grund av saknade entities.
+**Problem:** Bookings are skipped when entities are missing.
 
-## Exempel på körning
+### After (new behaviour):
+```
+1. Fetch bookings from the API
+2. FIRST PASS: check all entities
+   - Collect a list of missing entities
+3. If there are missing entities:
+   - Call fetch_entities.py automatically
+   - Fetch ALL entities from the API
+   - Verify that the missing entities now exist
+4. SECOND PASS: import the bookings
+   - All entities now exist
+   - No bookings are skipped ✓
+```
 
-### Scenario: Nya entities har lagts till i Awaio
+**Result:** No bookings are lost because of missing entities.
+
+## Example run
+
+### Scenario: new entities have been added in Awaio
 
 ```bash
 $ python3 fetch_bookings.py --date 2025-11-15 --days 1 --stats
@@ -43,7 +43,7 @@ $ python3 fetch_bookings.py --date 2025-11-15 --days 1 --stats
 ================================================================================
 AWAIO BOOKINGS IMPORTER
 ================================================================================
-Community ID: OlnrwKaefGc2C2Z9Znzv
+Community ID: your-community-id
 Database: awaio_db @ localhost:5432
 ================================================================================
 
@@ -51,7 +51,7 @@ Database: awaio_db @ localhost:5432
 → Date range: 2025-11-15 to 2025-11-16
 → Authenticating with Awaio API...
 ✓ Authentication successful
-→ Fetching bookings for community OlnrwKaefGc2C2Z9Znzv...
+→ Fetching bookings for community your-community-id...
 ✓ Successfully fetched 45 bookings
 
 → Connecting to database...
@@ -105,24 +105,24 @@ IMPORT COMPLETE
 ================================================================================
 ```
 
-## Kodändringar
+## Code changes
 
-### 1. Ny import
+### 1. New imports
 ```python
-import subprocess  # För att anropa fetch_entities.py
-from typing import List, Dict, Any, Optional, Set  # Set för att tracka missing entities
+import subprocess  # To call fetch_entities.py
+from typing import List, Dict, Any, Optional, Set  # Set to track missing entities
 ```
 
-### 2. Ny instansvariabel i BookingImporter
+### 2. New instance variable in BookingImporter
 ```python
 def __init__(self, db_config: Dict[str, Any]):
     self.db_config = db_config
     self.conn = None
     self.cursor = None
-    self.missing_entities: Set[str] = set()  # Tracka saknade entities
+    self.missing_entities: Set[str] = set()  # Track missing entities
 ```
 
-### 3. Ny metod: fetch_missing_entities()
+### 3. New method: fetch_missing_entities()
 ```python
 def fetch_missing_entities(self) -> bool:
     """
@@ -146,9 +146,9 @@ def fetch_missing_entities(self) -> bool:
     # ...
 ```
 
-### 4. Uppdaterad import_bookings() metod
+### 4. Updated import_bookings() method
 
-**Första passet - Hitta saknade entities:**
+**First pass - find missing entities:**
 ```python
 # First pass: Check for missing entities
 print(f"\n→ Checking for missing entities...")
@@ -169,7 +169,7 @@ else:
     print(f"✓ All entities exist in database")
 ```
 
-**Andra passet - Importera bokningar:**
+**Second pass - import bookings:**
 ```python
 # Second pass: Import bookings
 print(f"\n{'='*80}")
@@ -180,119 +180,119 @@ for idx, booking in enumerate(bookings, 1):
     # ... normal booking import ...
 ```
 
-## Fördelar
+## Benefits
 
-1. **Ingen dataförlust**: Bokningar skippas aldrig på grund av saknade entities
-2. **Automatisk**: Ingen manuell intervention krävs
-3. **Effektivt**: Fetchar bara entities en gång, inte för varje bokning
-4. **Robust**: Har timeout och felhantering
-5. **Transparent**: Tydliga loggar visar vad som händer
+1. **No data loss**: bookings are never skipped because of missing entities
+2. **Automatic**: no manual intervention needed
+3. **Efficient**: entities are fetched once, not for every booking
+4. **Robust**: has a timeout and error handling
+5. **Transparent**: clear logs show what happens
 
-## Användningsfall
+## Use cases
 
-### Use Case 1: Ny desk/room tillagd i Awaio
+### Use case 1: new desk/room added in Awaio
 ```
-1. Admin lägger till "Desk 99" i Awaio systemet
-2. Någon bokar "Desk 99" samma dag
-3. Cron-jobbet fetch_bookings.py körs
-4. Upptäcker att "Desk 99" saknas i databasen
-5. Anropar fetch_entities.py automatiskt
-6. "Desk 99" importeras
-7. Bokningen importeras framgångsrikt
-```
-
-### Use Case 2: Databasen tömd av misstag
-```
-1. Database rensades (TRUNCATE entities CASCADE)
-2. fetch_bookings.py körs
-3. Upptäcker att ALLA entities saknas
-4. Anropar fetch_entities.py
-5. Alla 194 entities hämtas
-6. Alla bokningar importeras framgångsrikt
+1. An admin adds "Desk 99" in Awaio
+2. Someone books "Desk 99" the same day
+3. The scheduled fetch_bookings.py run starts
+4. It finds that "Desk 99" is missing from the database
+5. It calls fetch_entities.py automatically
+6. "Desk 99" is imported
+7. The booking is imported successfully
 ```
 
-### Use Case 3: Partiell import (endast vissa entities)
+### Use case 2: the database was emptied by mistake
 ```
-1. Endast entities för Plan 1 importerades
-2. Bokning för Desk på Plan 2 kommer in
-3. fetch_bookings.py upptäcker saknad entity
-4. Hämtar ALLA entities (inklusive Plan 2)
-5. Bokningen importeras framgångsrikt
+1. The database was cleared (TRUNCATE entities CASCADE)
+2. fetch_bookings.py runs
+3. It finds that ALL entities are missing
+4. It calls fetch_entities.py
+5. All 194 entities are fetched
+6. All bookings are imported successfully
 ```
 
-## Felhantering
+### Use case 3: partial import (only some entities)
+```
+1. Only the entities for Plan 1 were imported
+2. A booking for a desk on Plan 2 comes in
+3. fetch_bookings.py finds the missing entity
+4. It fetches ALL entities (including Plan 2)
+5. The booking is imported successfully
+```
+
+## Error handling
 
 ### Timeout
-Om `fetch_entities.py` tar längre än 5 minuter:
+If `fetch_entities.py` takes longer than 5 minutes:
 ```
 ✗ Error: fetch_entities.py timed out after 5 minutes
 ⚠ Warning: Could not fetch all missing entities. Some bookings will be skipped.
 ```
 
-### Script inte hittat
-Om `fetch_entities.py` inte finns:
+### Script not found
+If `fetch_entities.py` does not exist:
 ```
 ✗ Error: fetch_entities.py not found at /path/to/fetch_entities.py
 ⚠ Warning: Could not fetch all missing entities. Some bookings will be skipped.
 ```
 
-### Entity fortfarande saknas efter fetch
-Om entity inte finns i API:t heller:
+### Entity still missing after the fetch
+If the entity does not exist in the API either:
 ```
 ⚠ Warning: 2 entities still missing after fetch
   Missing: XYZ123, ABC456
 ⚠ Warning: Could not fetch all missing entities. Some bookings will be skipped.
 ```
 
-## Kompatibilitet
+## Compatibility
 
-- ✓ Fungerar med befintlig kod
-- ✓ Inga breaking changes
-- ✓ Bakåtkompatibel
-- ✓ Fungerar med cron-jobb
-- ✓ Loggar till samma format som tidigare
+- ✓ Works with existing code
+- ✓ No breaking changes
+- ✓ Backwards compatible
+- ✓ Works with scheduled jobs
+- ✓ Logs in the same format as before
 
 ## Performance
 
-- **Extra tid för entity check**: ~0.1s för 50 bokningar
-- **Entity fetch (vid behov)**: ~10s för alla 194 entities
-- **Total overhead**: Försumbar om inga entities saknas, ~10s om fetch behövs
+- **Extra time for the entity check**: ~0.1 s for 50 bookings
+- **Entity fetch (when needed)**: ~10 s for all 194 entities
+- **Total overhead**: negligible if no entities are missing, ~10 s if a fetch is needed
 
-## Dokumentation uppdaterad
+## Documentation updated
 
-- ✓ CLAUDE.md - Tillagt beskrivning av automatic entity resolution
-- ✓ Denna fil (FETCH_BOOKINGS_IMPROVEMENTS.md) - Komplett dokumentation
+- ✓ CLAUDE.md - added a description of automatic entity resolution
+- ✓ This file (FETCH_BOOKINGS_IMPROVEMENTS.md) - complete documentation
 
-## Testning
+## Testing
 
-För att testa funktionaliteten:
+To test the feature:
 
 ```bash
-# 1. Ta bort en entity temporärt
+# 1. Remove an entity temporarily
 docker exec awaio-postgres psql -U awaio_user -d awaio_db -c "
 DELETE FROM entities WHERE id = 'some_entity_id';
 "
 
-# 2. Kör fetch_bookings med bokningar som använder den entityn
+# 2. Run fetch_bookings with bookings that use that entity
 python3 fetch_bookings.py --date 2025-11-14 --days 1
 
-# 3. Scriptet kommer att:
-#    - Upptäcka att entity saknas
-#    - Anropa fetch_entities.py
-#    - Importera entityn
-#    - Importera bokningen framgångsrikt
+# 3. The script will:
+#    - Find that the entity is missing
+#    - Call fetch_entities.py
+#    - Import the entity
+#    - Import the booking successfully
 ```
 
-## Framtida förbättringar
+## Possible future improvements
 
-Möjliga framtida förbättringar:
+1. **Selective entity fetch**: fetch only the specific missing entities instead of all
+2. **Cache**: cache the entity status to avoid repeated checks
+3. **Parallel fetch**: fetch entities in parallel with bookings
+4. **Metrics**: track how often entities are missing and must be fetched
 
-1. **Selektiv entity fetch**: Hämta endast de specifika saknade entities istället för alla
-2. **Cache**: Cacha entity-status för att undvika upprepade kontroller
-3. **Parallell fetch**: Hämta entities parallellt med bookings
-4. **Metrics**: Spåra hur ofta entities saknas och måste hämtas
+## Version history
 
-## Versionshistorik
-
-- **v1.1** (2025-11-15): Tillagt automatic entity resolution
-- **v1.0**: Original version (skippade bokningar med saknade entities)
+- **v1.3** (2026-10-27): Summary-only logging by default; `--verbose` for per-object detail
+- **v1.2** (2026-10-26): Historical bookings via `includeObsolete=true` (90-day windows), new API host `api.awaio.com`, long admin bookings stored as `blocked`
+- **v1.1** (2025-11-15): Added automatic entity resolution
+- **v1.0**: Original version (skipped bookings with missing entities)

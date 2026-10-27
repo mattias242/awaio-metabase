@@ -1,5 +1,5 @@
--- Förbättrad bokningsprognos-modell
--- Denna version använder faktiska bokningsrader istället för aggregerad data
+-- Improved booking forecast model
+-- This version uses actual booking rows instead of aggregated data
 
 CREATE MODEL booking_forecast_v2
 FROM awaio_postgres
@@ -14,5 +14,5 @@ FROM awaio_postgres
      AND start_time < NOW())
 PREDICT day_of_week
 
--- OBS: Detta tränar på faktiska bokningsrader och kan predicera
--- vilken veckodag som är mest trolig baserat på mönster
+-- NOTE: This trains on actual booking rows and can predict
+-- which weekday is most likely based on patterns

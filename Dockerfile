@@ -2,21 +2,21 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Installera systempaket
+# Install system packages
 RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Kopiera requirements
+# Copy requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopiera applikationskod
+# Copy application code
 COPY . .
 
 EXPOSE 5000
 
-# Vänta på databas och starta sedan appen
+# Wait for the database, then start the app
 CMD ["python", "webhook_receiver.py"]
 
 

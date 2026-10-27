@@ -1,5 +1,5 @@
 services:
-  # PostgreSQL databas (optimerad för Windows/WSL2 med Docker Desktop)
+  # PostgreSQL database (tuned for Windows/WSL2 with Docker Desktop)
   postgres:
     image: postgres:16-alpine
     container_name: awaio-postgres
@@ -27,7 +27,7 @@ services:
     mem_limit: 1024m
     memswap_limit: 1024m
 
-  # Metabase för visualisering
+  # Metabase for visualisation
   metabase:
     image: metabase/metabase:latest
     container_name: awaio-metabase
@@ -60,7 +60,7 @@ services:
       retries: 3
       start_period: 120s
 
-  # MindsDB för ML och AI predictions (profil: ai / full)
+  # MindsDB for ML and AI predictions (profile: ai / full)
   mindsdb:
     image: mindsdb/mindsdb:latest
     container_name: awaio-mindsdb
@@ -82,7 +82,7 @@ services:
       - full
       - ai
 
-  # Streamlit Chat App (profil: ai / full)
+  # Streamlit Chat App (profile: ai / full)
   chat:
     build:
       context: ./chat_app
@@ -104,7 +104,7 @@ services:
       - full
       - ai
 
-  # pgAdmin för databashantering (profil: admin / full)
+  # pgAdmin for database administration (profile: admin / full)
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: awaio-pgadmin
@@ -127,7 +127,7 @@ services:
       - full
       - admin
 
-  # Python Data Fetcher (profil: tools — körs via docker compose run)
+  # Python Data Fetcher (profile: tools — run via docker compose run)
   fetcher:
     build:
       context: .
@@ -160,8 +160,8 @@ services:
     profiles:
       - tools
 
-  # Långkörande scheduler — kör fetch_bookings + fetch_entities + REFRESH bi.v_hour_slots
-  # varje hel timme 07–19 Europe/Stockholm. Delar image med `fetcher`.
+  # Long-running scheduler — runs fetch_entities + fetch_bookings + REFRESH bi.v_hour_slots
+  # every full hour 07–19 Europe/Stockholm. Shares the image with `fetcher`.
   scheduler:
     build:
       context: .

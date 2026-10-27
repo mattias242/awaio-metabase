@@ -28,13 +28,13 @@ SQL views (`sql/views/*.sql`) and Metabase models (`metabase/models/*.sql`) don'
 
 This project runs on **Windows 11 with Docker Desktop** (native PowerShell or WSL2).
 
-- **Docker Compose**: `docker-compose.yml` (enda compose-filen — Windows-anpassad med minnesgränser och TZ)
-- **Env file**: `.env.example` (kopieras till `.env` av setup-scriptet)
-- **PostgreSQL port**: 5433 (för att undvika konflikt med lokal PostgreSQL)
-- **Setup script**: `windows-setup.ps1` (PowerShell) eller `windows-setup.sh` (WSL2/bash)
+- **Docker Compose**: `docker-compose.yml` (the only compose file — tuned for Windows with memory limits and TZ)
+- **Env file**: `.env.example` (copied to `.env` by the setup script)
+- **PostgreSQL port**: 5433 (to avoid a conflict with a local PostgreSQL)
+- **Setup script**: `windows-setup.ps1` (PowerShell) or `windows-setup.sh` (WSL2/bash)
 - **Task scripts**: `task_fetch_bookings_windows.{ps1,sh}`, `task_backup_windows.{ps1,sh}`
-- **Scheduled via**: Windows Task Scheduler (registreras av `windows-setup.ps1`) eller WSL2-crontab
-- **Metabase seed**: `metabase/metabase_app_backup.sql.gz` (återställs av setup-scriptet om den finns)
+- **Scheduled via**: Windows Task Scheduler (registered by `windows-setup.ps1`) or WSL2 crontab
+- **Metabase seed**: `metabase/metabase_app_backup.sql.gz` (git-ignored; restored by the setup script if present)
 
 ## Environment Setup
 
@@ -50,7 +50,7 @@ This project runs on **Windows 11 with Docker Desktop** (native PowerShell or WS
    ```
 
 ### Docker Environment
-Start the complete stack (PostgreSQL + Metabase som default):
+Start the complete stack (PostgreSQL + Metabase by default):
 ```bash
 docker compose up -d
 docker compose ps  # Verify all containers are running
@@ -59,31 +59,26 @@ docker compose ps  # Verify all containers are running
 Access points:
 - PostgreSQL: `localhost:5433` (credentials from .env)
 - Metabase: http://localhost:3000
-- pgAdmin: http://localhost:5050 (endast med `--profile admin` eller `full`)
-- MindsDB: http://localhost:47334 (endast med `--profile ai` eller `full`)
-- Chat App: http://localhost:8501 (endast med `--profile ai` eller `full`)
+- pgAdmin: http://localhost:5050 (only with `--profile admin` or `full`)
+- MindsDB: http://localhost:47334 (only with `--profile ai` or `full`)
+- Chat App: http://localhost:8501 (only with `--profile ai` or `full`)
 
-**Important**: When connecting from Metabase/pgAdmin to PostgreSQL, use hostname `postgres` (not `localhost`) since they run in Docker network. Inom Docker-nätverket används port `5432`, extern port på hosten är `5433`.
+**Important**: When connecting from Metabase/pgAdmin to PostgreSQL, use hostname `postgres` (not `localhost`) since they run in Docker network. Inside the Docker network the port is `5432`; the external port on the host is `5433`.
 
 **Deployment profiles**:
 - **Default** (no profile): PostgreSQL + Metabase (~3 GB RAM)
 - **Admin** (`--profile admin`): + pgAdmin (~3.5 GB RAM)
 - **AI** (`--profile ai`): + MindsDB + Chat (~5 GB RAM)
 - **Full** (`--profile full`): All services (~6 GB RAM)
-- **Tools** (`--profile tools`): lägger till `fetcher`-containern för engångsjobb (t.ex. `docker compose --profile tools run --rm fetcher python3 fetch_bookings.py --days 1`)
+- **Tools** (`--profile tools`): adds the `fetcher` container for one-off jobs (e.g. `docker compose --profile tools run --rm fetcher python3 fetch_bookings.py --days 1`)
 
-Se `README.md` och `README_DOCKER.md` för kompletta setup-instruktioner.
+See `README.md` and `README_DOCKER.md` for complete setup instructions.
 
 ## Secrets Management
 
-Hemligheter lagras i Bitwarden (EU-server) som custom fields i item `dev/awaio`.
+Secrets live in `.env` only; keep a copy in a password manager (in particular `ANONYMIZE_SALT`).
 
-```bash
-# Regenerera .env från Bitwarden
-bw-env awaio
-```
-
-Committa aldrig `.env`-filer — de finns i globala `.gitignore`.
+Never commit `.env` files — they are git-ignored.
 
 ## Data Import Scripts
 
@@ -114,15 +109,18 @@ python3 fetch_bookings.py --date 2025-06-01 --days 136 --stats
 python3 fetch_bookings.py --date 2025-09-01 --days 30
 ```
 
-**Date handling**: The `--date` argument accepts `YYYY-MM-DD` format. The script converts this to OData filter syntax internally:
+**Date handling**: The `--date` argument accepts `YYYY-MM-DD` format. The script converts this to an OData overlap filter and sends `includeObsolete=true`, which Awaio requires for bookings that ended more than ~7 days ago:
 ```
-$filter=start ge '2025-06-01T00:00:00.000Z' and end le '2025-10-15T23:59:59.999Z'
+$filter=end ge '2025-06-01T00:00:00.000Z' and start le '2025-10-15T23:59:59.999Z'
 ```
+The API rejects `includeObsolete` windows longer than 92 days, so `get_bookings()` splits long ranges into 90-day windows and dedupes by id. Historical bookings come back with status `obsolete` and are stored as `reserved`; admin bookings longer than 12 h are stored as `blocked` so they stay out of utilisation statistics.
+
+**Logging**: default output is summaries and errors; `--verbose` logs every imported object and the full HTTP exchanges (credentials redacted).
 
 **Automatic entity resolution**: If bookings reference entities not in the database, the script automatically calls `fetch_entities.py` to fetch them from the API, then retries the booking import. This ensures bookings are never skipped due to missing entities.
 
 ### scheduler_loop.py
-Long-running loop that runs inside the `awaio-scheduler` container (same image as `fetcher`, started by default `docker compose up -d`). Once per top-of-hour between 07:00 and 19:00 Europe/Stockholm it runs `fetch_bookings.py` (rolling window via `logs/last_fetch.state`), `fetch_entities.py`, and `REFRESH MATERIALIZED VIEW bi.v_hour_slots`. State is updated only when all three steps succeed. Logs go to stdout (`docker compose logs scheduler`) and `logs/scheduler.log` (rotated daily, 14 day retention). Because it shares `logs/last_fetch.state` with `task_fetch_bookings_windows.ps1`, do **not** also schedule the PS1 task in Windows Task Scheduler when the scheduler container is active.
+Long-running loop that runs inside the `awaio-scheduler` container (same image as `fetcher`, started by default `docker compose up -d`). Once per top-of-hour between 07:00 and 19:00 Europe/Stockholm it runs `fetch_entities.py`, `fetch_bookings.py` (rolling window via `logs/last_fetch.state`), and `REFRESH MATERIALIZED VIEW bi.v_hour_slots`. State is updated only when all three steps succeed. The wait between runs is checked against the wall clock in 60 s chunks, so host sleep does not stall it. Logs go to stdout (`docker compose logs scheduler`) and `logs/scheduler.log` (rotated daily, 14 day retention). Because it shares `logs/last_fetch.state` with `task_fetch_bookings_windows.ps1`, do **not** also schedule the PS1 task in Windows Task Scheduler when the scheduler container is active.
 
 ## Database Architecture
 
@@ -182,7 +180,7 @@ raw user_id, so they leak nothing either.
 
 `ANONYMIZE_SALT` is **required** when `ANONYMIZE_USERS=true`; `fetch_bookings.py`
 aborts at startup if it is missing. Generate once with `openssl rand -hex 32`,
-store in `.env` and Bitwarden (`dev/awaio`). **If the salt is lost, longitudinal
+store in `.env` and a password manager. **If the salt is lost, longitudinal
 correlation between old and new imports is permanently broken** — there is no
 way to recover the previous pseudonyms.
 
@@ -218,7 +216,7 @@ All API scripts use OAuth2 client credentials flow:
 Token is obtained from `/auth/token` endpoint and used as Bearer token for subsequent requests.
 
 ### API Version
-Current API base URL uses `v1.0.0` for entities and `v1.1.0` for bookings (check `API_BASE_URL` in scripts).
+The API host is `https://api.awaio.com` (auth: `/auth/token`). The default base URL is `v1.0.0` for entities and `v1.1.0` for bookings (check `API_BASE_URL` in the scripts; docker-compose sets `v1.1.0` for both).
 
 ## Common Issues
 

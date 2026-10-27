@@ -4,14 +4,14 @@
     Awaio Windows 11 Deployment Setup Script
 
 .DESCRIPTION
-    Sätter upp Awaio på Windows 11 med Docker Desktop.
-    Kräver inte WSL2 — allt körs direkt i PowerShell.
+    Sets up Awaio on Windows 11 with Docker Desktop.
+    Does not need WSL2 — everything runs directly in PowerShell.
 
 .NOTES
-    Kör i PowerShell som administratör för att kunna registrera
-    schemalagda uppgifter i Windows Task Scheduler.
+    Run in PowerShell as administrator to be able to register
+    scheduled tasks in Windows Task Scheduler.
 
-    Användning:
+    Usage:
         Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
         .\windows-setup.ps1
 #>
@@ -20,7 +20,7 @@
 param()
 
 # ============================================
-# Hjälpfunktioner
+# Helper functions
 # ============================================
 function Write-Header {
     param([string]$Text)
@@ -43,7 +43,7 @@ function Read-YesNo {
 }
 
 # ============================================
-# Byt till script-katalogen
+# Change to the script directory
 # ============================================
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ScriptDir
@@ -51,24 +51,24 @@ Set-Location $ScriptDir
 Clear-Host
 Write-Header "Awaio Windows 11 Deployment Setup"
 Write-Host ""
-Write-Host "  Sätter upp Awaio på Windows 11 med Docker Desktop."
+Write-Host "  Sets up Awaio on Windows 11 with Docker Desktop."
 Write-Host ""
 
 if (-not (Test-Path "docker-compose.yml")) {
-    Write-Err "Kan inte hitta docker-compose.yml"
-    Write-Err "Kör scriptet från Awaio-projektmappen!"
+    Write-Err "Cannot find docker-compose.yml"
+    Write-Err "Run the script from the Awaio project folder!"
     exit 1
 }
 
 # ============================================
-# Steg 1: Kontrollera förutsättningar
+# Step 1: Check prerequisites
 # ============================================
-Write-Header "Steg 1: Kontrollera förutsättningar"
+Write-Header "Step 1: Check prerequisites"
 
 # Docker CLI
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Err "Docker är inte installerat eller inte i PATH"
-    Write-Warn "Hämta Docker Desktop: https://www.docker.com/products/docker-desktop/"
+    Write-Err "Docker is not installed or not in PATH"
+    Write-Warn "Get Docker Desktop: https://www.docker.com/products/docker-desktop/"
     exit 1
 }
 Write-OK "Docker: $(docker --version)"
@@ -76,8 +76,8 @@ Write-OK "Docker: $(docker --version)"
 # Docker Compose v2
 $composeTest = docker compose version 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Docker Compose v2 saknas ('docker compose' fungerar inte)"
-    Write-Warn "Uppgradera Docker Desktop till version 3.4.0+"
+    Write-Err "Docker Compose v2 is missing ('docker compose' does not work)"
+    Write-Warn "Upgrade Docker Desktop to version 3.4.0+"
     exit 1
 }
 Write-OK "Compose: $composeTest"
@@ -85,72 +85,72 @@ Write-OK "Compose: $composeTest"
 # Docker daemon
 $dockerInfo = docker info 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Docker Desktop verkar inte köra"
-    Write-Warn "Starta Docker Desktop och försök igen"
+    Write-Err "Docker Desktop does not seem to be running"
+    Write-Warn "Start Docker Desktop and try again"
     exit 1
 }
-Write-OK "Docker Desktop körs"
+Write-OK "Docker Desktop is running"
 
-# RAM-kontroll
+# RAM check
 $os = Get-CimInstance Win32_OperatingSystem
 $totalMB = [math]::Round($os.TotalVisibleMemorySize / 1024)
 $freeMB  = [math]::Round($os.FreePhysicalMemory / 1024)
-Write-Info "RAM: $totalMB MB totalt, $freeMB MB ledigt"
+Write-Info "RAM: $totalMB MB total, $freeMB MB free"
 if ($freeMB -lt 2000) {
-    Write-Warn "Mindre än 2 GB ledigt — rekommenderar minimal profil"
+    Write-Warn "Less than 2 GB free — the minimal profile is recommended"
 }
 
-# Port-kontroll
-Write-Info "Kontrollerar portar..."
+# Port check
+Write-Info "Checking ports..."
 foreach ($port in @(5433, 3000)) {
     $inUse = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if ($inUse) {
-        Write-Warn "Port $port verkar redan vara upptagen"
+        Write-Warn "Port $port seems to be in use already"
     } else {
-        Write-OK "Port $port är ledig"
+        Write-OK "Port $port is free"
     }
 }
 
-# Admin-check (behövs för Task Scheduler)
+# Admin check (needed for Task Scheduler)
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
     [Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Warn "Körs INTE som administratör — Task Scheduler-registrering kräver admin"
+    Write-Warn "NOT running as administrator — Task Scheduler registration requires admin"
 }
 
 # ============================================
-# Steg 2: Konfigurera .env
+# Step 2: Configure .env
 # ============================================
-Write-Header "Steg 2: Konfigurera miljövariabler"
+Write-Header "Step 2: Configure environment variables"
 
 if (Test-Path ".env") {
-    Write-Warn ".env finns redan"
-    if (Read-YesNo "Skriv över med .env.example?" $false) {
+    Write-Warn ".env already exists"
+    if (Read-YesNo "Overwrite with .env.example?" $false) {
         Copy-Item ".env.example" ".env" -Force
-        Write-OK ".env kopierad från .env.example"
+        Write-OK ".env copied from .env.example"
     } else {
-        Write-Info "Behåller befintlig .env"
+        Write-Info "Keeping the existing .env"
     }
 } else {
     Copy-Item ".env.example" ".env"
-    Write-OK ".env skapad från .env.example"
-    Write-Warn "Uppdatera .env med dina Awaio API-credentials (AWAIO_CLIENT_ID / AWAIO_CLIENT_SECRET)"
+    Write-OK ".env created from .env.example"
+    Write-Warn "Update .env with your Awaio API credentials (AWAIO_CLIENT_ID / AWAIO_CLIENT_SECRET)"
 }
 
 # ============================================
-# Steg 3: Välj deployment-profil
+# Step 3: Choose a deployment profile
 # ============================================
-Write-Header "Steg 3: Välj deployment-profil"
+Write-Header "Step 3: Choose a deployment profile"
 
 Write-Host ""
-Write-Host "  Välj vilken profil du vill använda:"
+Write-Host "  Choose which profile to use:"
 Write-Host ""
 Write-Host "  1) Minimal  (PostgreSQL + Metabase)       ~3 GB RAM"
 Write-Host "  2) Admin    (+ pgAdmin)                   ~3.5 GB RAM"
 Write-Host "  3) AI       (+ MindsDB + Chat)            ~5 GB RAM"
-Write-Host "  4) Full     (alla tjänster)               ~6 GB RAM"
+Write-Host "  4) Full     (all services)               ~6 GB RAM"
 Write-Host ""
-$profileChoice = Read-Host "Välj profil (1-4) [default: 1]"
+$profileChoice = Read-Host "Choose profile (1-4) [default: 1]"
 
 switch ($profileChoice) {
     "2" { $composeProfile = "--profile admin"; $profileName = "Admin" }
@@ -159,71 +159,71 @@ switch ($profileChoice) {
     default { $composeProfile = "";            $profileName = "Minimal" }
 }
 
-Write-OK "Profil: $profileName"
+Write-OK "Profile: $profileName"
 
 # ============================================
-# Steg 4: Skapa kataloger
+# Step 4: Create directories
 # ============================================
-Write-Header "Steg 4: Skapa kataloger"
+Write-Header "Step 4: Create directories"
 
 New-Item -ItemType Directory -Force -Path "backups" | Out-Null
 New-Item -ItemType Directory -Force -Path "logs"    | Out-Null
-Write-OK "Kataloger skapade (backups, logs)"
+Write-OK "Directories created (backups, logs)"
 
 # ============================================
-# Steg 5: Pull och starta containers
+# Step 5: Pull and start containers
 # ============================================
-Write-Header "Steg 5: Starta containers"
+Write-Header "Step 5: Start containers"
 
 Write-Host ""
-if (Read-YesNo "Starta containers nu?" $true) {
-    Write-Info "Hämtar Docker images (kan ta några minuter)..."
+if (Read-YesNo "Start containers now?" $true) {
+    Write-Info "Pulling Docker images (may take a few minutes)..."
     Invoke-Expression "docker compose $composeProfile pull"
 
-    Write-Info "Startar containers..."
+    Write-Info "Starting containers..."
     Invoke-Expression "docker compose $composeProfile up -d"
 
     Write-Host ""
-    Write-OK "Containers startade!"
+    Write-OK "Containers started!"
     Write-Info "Container-status:"
     docker compose ps
 } else {
-    Write-Info "Starta manuellt med:"
+    Write-Info "Start manually with:"
     Write-Host "  docker compose $composeProfile up -d"
 }
 
 # ============================================
-# Steg 6: Metabase-restore
+# Step 6: Metabase restore
 # ============================================
-Write-Header "Steg 6: Återställ Metabase-konfiguration"
+Write-Header "Step 6: Restore the Metabase configuration"
 
 $metabaseBackup = Join-Path $ScriptDir "metabase\metabase_app_backup.sql.gz"
 
 if (Test-Path $metabaseBackup) {
     $backupSize = [math]::Round((Get-Item $metabaseBackup).Length / 1MB, 1)
     Write-Host ""
-    Write-Host "  Hittade Metabase-backup ($backupSize MB)"
-    Write-Host "  Återställning ger dig befintliga frågor och dashboards från NAS."
+    Write-Host "  Found a Metabase backup ($backupSize MB)"
+    Write-Host "  Restoring gives you the existing questions and dashboards."
     Write-Host ""
 
-    if (Read-YesNo "Återställ Metabase-konfiguration?" $true) {
-        Write-Info "Väntar på att PostgreSQL ska bli redo..."
+    if (Read-YesNo "Restore the Metabase configuration?" $true) {
+        Write-Info "Waiting for PostgreSQL to become ready..."
         $retries = 0
         do {
             Start-Sleep -Seconds 10
             $ready = docker compose exec -T postgres pg_isready -U awaio_user 2>&1
             $retries++
             if ($retries -gt 30) {
-                Write-Err "PostgreSQL svarar inte — avbryter restore"
+                Write-Err "PostgreSQL is not responding — aborting restore"
                 break
             }
         } until ($ready -match "accepting connections")
 
-        Write-Info "Skapar metabase_app-databasen om den inte finns..."
+        Write-Info "Creating the metabase_app database if it does not exist..."
         docker compose exec -T postgres `
             psql -U awaio_user -c "CREATE DATABASE metabase_app OWNER awaio_user;" 2>$null
 
-        Write-Info "Dekomprimerar och återställer backup..."
+        Write-Info "Decompressing and restoring the backup..."
         try {
             Add-Type -AssemblyName System.IO.Compression.FileSystem
             $fs     = [System.IO.File]::OpenRead($metabaseBackup)
@@ -235,37 +235,37 @@ if (Test-Path $metabaseBackup) {
             $sql | docker exec -i awaio-postgres psql -U awaio_user -d metabase_app
 
             if ($LASTEXITCODE -eq 0) {
-                Write-OK "Metabase-konfiguration återställd!"
-                Write-Info "Starta om Metabase för att ladda konfigurationen:"
+                Write-OK "Metabase configuration restored!"
+                Write-Info "Restart Metabase to load the configuration:"
                 Write-Host "  docker compose restart metabase"
             } else {
-                Write-Err "Restore misslyckades (exit $LASTEXITCODE)"
+                Write-Err "Restore failed (exit $LASTEXITCODE)"
             }
         } catch {
-            Write-Err "Fel vid restore: $_"
+            Write-Err "Error during restore: $_"
         }
     } else {
-        Write-Info "Hoppar över Metabase-restore"
+        Write-Info "Skipping the Metabase restore"
     }
 } else {
-    Write-Warn "Ingen Metabase-backup hittad (metabase\metabase_app_backup.sql.gz)"
-    Write-Info "Lägg en existerande Metabase-dump i metabase\ för att återställa tidigare dashboards."
+    Write-Warn "No Metabase backup found (metabase\metabase_app_backup.sql.gz)"
+    Write-Info "Put an existing Metabase dump in metabase\ to restore earlier dashboards."
 }
 
 # ============================================
-# Steg 7: Schemalägg daglig backup
+# Step 7: Schedule a daily backup
 # ============================================
-Write-Header "Steg 7: Schemalägg daglig backup"
+Write-Header "Step 7: Schedule a daily backup"
 
 Write-Host ""
-Write-Host "  Vill du registrera daglig backup (kl 02:00) i Windows Task Scheduler?"
-Write-Host "  Datahämtning (fetch_bookings) körs manuellt — inte schemalagt."
+Write-Host "  Do you want to register a daily backup (at 02:00) in Windows Task Scheduler?"
+Write-Host "  Data fetching (fetch_bookings) is run by the scheduler container, not here."
 Write-Host ""
 
 if (-not $isAdmin) {
-    Write-Warn "Kräver administratörsbehörighet — hoppar över automatisk registrering"
-    Write-Info "Kör scriptet som administratör för att aktivera schemaläggning"
-} elseif (Read-YesNo "Registrera 'Awaio - Daily Backup'?" $false) {
+    Write-Warn "Requires administrator rights — skipping automatic registration"
+    Write-Info "Run the script as administrator to enable scheduling"
+} elseif (Read-YesNo "Register 'Awaio - Daily Backup'?" $false) {
     $backupScript = Join-Path $ScriptDir "task_backup_windows.ps1"
 
     $backupAction   = New-ScheduledTaskAction -Execute "powershell.exe" `
@@ -276,23 +276,23 @@ if (-not $isAdmin) {
     Register-ScheduledTask -TaskName "Awaio - Daily Backup" `
         -Action $backupAction -Trigger $backupTrigger -Settings $backupSettings `
         -RunLevel Highest -Force | Out-Null
-    Write-OK "Task Scheduler: 'Awaio - Daily Backup' (dagligen kl 02:00)"
+    Write-OK "Task Scheduler: 'Awaio - Daily Backup' (daily at 02:00)"
 } else {
-    Write-Info "Kör manuellt vid behov:"
+    Write-Info "Run manually when needed:"
     Write-Host "  .\task_backup_windows.ps1"
 }
 
 Write-Host ""
-Write-Info "Hämta bookings manuellt (räknar ut datumintervall från senaste körning):"
+Write-Info "Fetch bookings manually (works out the date range from the last run):"
 Write-Host "  .\task_fetch_bookings_windows.ps1"
 
 # ============================================
-# Klar!
+# Done!
 # ============================================
 Write-Host ""
-Write-Header "Installation klar!"
+Write-Header "Installation complete!"
 Write-Host ""
-Write-Info "Access-URLer:"
+Write-Info "Access URLs:"
 Write-Host "  Metabase:   http://localhost:3000"
 if ($composeProfile -match "admin|full") {
     Write-Host "  pgAdmin:    http://localhost:5050"
@@ -303,12 +303,12 @@ if ($composeProfile -match "ai|full") {
 }
 Write-Host "  PostgreSQL: localhost:5433"
 Write-Host ""
-Write-Info "Hämta data manuellt:"
+Write-Info "Fetch data manually:"
 Write-Host "  docker compose --profile tools run --rm fetcher python3 fetch_entities.py --stats"
 Write-Host "  docker compose --profile tools run --rm fetcher python3 fetch_bookings.py --date 2025-01-01 --days 30 --stats"
 Write-Host ""
-Write-Info "Observera: Docker Desktop måste köra för att containers ska starta."
-Write-Host "           Aktivera 'Start Docker Desktop when you log in' i inställningarna."
+Write-Info "Note: Docker Desktop must be running for the containers to start."
+Write-Host "      Enable 'Start Docker Desktop when you log in' in the settings."
 Write-Host ""
-Write-OK "Tack för att du använder Awaio!"
+Write-OK "Thanks for using Awaio!"
 Write-Host ""

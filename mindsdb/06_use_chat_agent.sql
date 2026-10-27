@@ -1,25 +1,25 @@
--- Chatta med din bokningsdata via AI-agenten
--- Kör efter att du skapat modellen i 05_create_chat_agent.sql
+-- Chat with your booking data via the AI agent
+-- Run after creating the model in 05_create_chat_agent.sql
 
--- Exempel 1: Enkel fråga
+-- Example 1: Simple question
 SELECT answer
 FROM awaio_chat_agent
-WHERE question = 'Vilken veckodag har flest bokningar?'
+WHERE question = 'Which weekday has the most bookings?'
 
--- Exempel 2: Fråga med JOIN till faktisk data
+-- Example 2: Question with a JOIN to actual data
 SELECT
   t.question,
   m.answer
 FROM (
-  SELECT 'Hur många bokningar finns det totalt?' AS question
+  SELECT 'How many bookings are there in total?' AS question
   UNION ALL
-  SELECT 'Vilket skrivbord är mest populärt?'
+  SELECT 'Which desk is the most popular?'
   UNION ALL
-  SELECT 'Vilka dagar har minst aktivitet?'
+  SELECT 'Which days have the least activity?'
 ) AS t
 JOIN awaio_chat_agent AS m
 
--- Exempel 3: Fråga baserad på faktisk statistik
+-- Example 3: Question based on actual statistics
 SELECT m.answer
 FROM awaio_chat_agent AS m
 JOIN (
@@ -31,9 +31,9 @@ JOIN (
   FROM awaio_postgres.bookings
 ) AS stats
 WHERE m.question = CONCAT(
-  'Vi har ',
+  'We have ',
   CAST(stats.total_bookings AS VARCHAR),
-  ' bokningar från ',
+  ' bookings from ',
   CAST(stats.unique_users AS VARCHAR),
-  ' användare. Vad säger detta om vårt utnyttjande?'
+  ' users. What does this say about our utilisation?'
 )

@@ -1,185 +1,185 @@
 # Metabase Metrics Setup Guide
 
-Detta dokument beskriver hur du skapar återanvändbara Metrics i Metabase för Awaio-projektet.
+This document describes how to create reusable Metrics in Metabase for the Awaio project.
 
-## Vad är Metrics?
+## What are Metrics?
 
-Metrics är förkonfigurerade aggregeringar som kan återanvändas över flera frågor och dashboards. De säkerställer konsekventa beräkningar och förenklar analys för icke-tekniska användare.
+Metrics are pre-configured aggregations that can be reused across many questions and dashboards. They ensure consistent calculations and make analysis easier for non-technical users.
 
-## Fördefinierade Metrics för Awaio
+## Predefined Metrics for Awaio
 
-Följande Metrics täcker de vanligaste beräkningarna för bokningsanalys.
+The following Metrics cover the most common calculations for booking analysis.
 
 ---
 
-## 1. Antal bokningar
+## 1. Number of bookings
 
-**Namn:** `Antal bokningar`
-**Tabell:** `bookings`
-**Typ:** Count of rows
-**Filter:** Ingen (räknar alla bokningar)
+**Name:** `Number of bookings`
+**Table:** `bookings`
+**Type:** Count of rows
+**Filter:** None (counts all bookings)
 
-### Skapa i Metabase:
-1. Gå till **Settings** → **Admin** → **Table Metadata**
-2. Välj databas: `awaio_db`
-3. Hitta tabellen: `bookings`
-4. Klicka på **+ Add a Metric**
-5. Fyll i:
-   - **Name:** `Antal bokningar`
-   - **Description:** `Totalt antal bokningar i systemet`
-   - **Definition:** Välj `Count of rows`
-6. Spara
+### Create in Metabase:
+1. Go to **Settings** → **Admin** → **Table Metadata**
+2. Choose the database: `awaio_db`
+3. Find the table: `bookings`
+4. Click **+ Add a Metric**
+5. Fill in:
+   - **Name:** `Number of bookings`
+   - **Description:** `Total number of bookings in the system`
+   - **Definition:** choose `Count of rows`
+6. Save
 
-### Användningsexempel:
+### Usage example:
 ```sql
--- I Query Builder:
-SELECT "Antal bokningar" FROM bookings
+-- In the Query Builder:
+SELECT "Number of bookings" FROM bookings
 GROUP BY entity_id
 
--- Resultat: Antal bokningar per entity
+-- Result: number of bookings per entity
 ```
 
 ---
 
-## 2. Genomsnittlig bokningstid (timmar)
+## 2. Average booking duration (hours)
 
-**Namn:** `Genomsnittlig bokningstid (timmar)`
-**Tabell:** `bookings`
-**Typ:** Custom expression
-**Formel:** `AVG([end_time] - [start_time]) / 3600`
+**Name:** `Average booking duration (hours)`
+**Table:** `bookings`
+**Type:** Custom expression
+**Formula:** `AVG([end_time] - [start_time]) / 3600`
 
-### Skapa i Metabase:
-1. Gå till **Settings** → **Admin** → **Table Metadata**
-2. Välj databas: `awaio_db`
-3. Hitta tabellen: `bookings`
-4. Klicka på **+ Add a Metric**
-5. Fyll i:
-   - **Name:** `Genomsnittlig bokningstid (timmar)`
-   - **Description:** `Genomsnittlig längd på bokningar i timmar (end_time - start_time)`
-   - **Definition:** Välj `Custom Expression`
+### Create in Metabase:
+1. Go to **Settings** → **Admin** → **Table Metadata**
+2. Choose the database: `awaio_db`
+3. Find the table: `bookings`
+4. Click **+ Add a Metric**
+5. Fill in:
+   - **Name:** `Average booking duration (hours)`
+   - **Description:** `Average length of bookings in hours (end_time - start_time)`
+   - **Definition:** choose `Custom Expression`
    - **Expression:**
      ```
      Average([End Time] - [Start Time]) / interval(1, 'hour')
      ```
-     *OBS: Metabase GUI kan ha olika syntax, testa också:*
+     *NOTE: the Metabase GUI may use a different syntax; also try:*
      ```
      AVG(([End Time] - [Start Time]) / 3600000000000)
      ```
-     *(PostgreSQL interval till sekunder, sedan till timmar)*
+     *(PostgreSQL interval to seconds, then to hours)*
 
-### Alternativ SQL för Native Query:
-Om Custom Expression är komplicerad i GUI, använd Native Query:
+### Alternative SQL for a Native Query:
+If the Custom Expression is awkward in the GUI, use a Native Query:
 ```sql
 SELECT
     entity_id,
-    AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600) as genomsnittlig_bokningstid_timmar
+    AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600) as avg_booking_duration_hours
 FROM bookings
 GROUP BY entity_id
 ```
 
-### Användningsexempel:
-- Jämföra genomsnittlig bokningstid mellan rum och skrivbord
-- Identifiera resurser med onormalt långa/korta bokningar
-- Trend över tid (ökar/minskar medeltiden?)
+### Usage examples:
+- Compare the average booking duration between rooms and desks
+- Identify resources with unusually long/short bookings
+- Trend over time (is the average increasing/decreasing?)
 
 ---
 
-## 3. Total bokad tid (timmar)
+## 3. Total booked time (hours)
 
-**Namn:** `Total bokad tid (timmar)`
-**Tabell:** `bookings`
-**Typ:** Custom expression
-**Formel:** `SUM([end_time] - [start_time]) / 3600`
+**Name:** `Total booked time (hours)`
+**Table:** `bookings`
+**Type:** Custom expression
+**Formula:** `SUM([end_time] - [start_time]) / 3600`
 
-### Skapa i Metabase:
-1. Gå till **Settings** → **Admin** → **Table Metadata**
-2. Välj databas: `awaio_db`
-3. Hitta tabellen: `bookings`
-4. Klicka på **+ Add a Metric**
-5. Fyll i:
-   - **Name:** `Total bokad tid (timmar)`
-   - **Description:** `Total summerad tid för alla bokningar i timmar`
-   - **Definition:** Välj `Custom Expression`
+### Create in Metabase:
+1. Go to **Settings** → **Admin** → **Table Metadata**
+2. Choose the database: `awaio_db`
+3. Find the table: `bookings`
+4. Click **+ Add a Metric**
+5. Fill in:
+   - **Name:** `Total booked time (hours)`
+   - **Description:** `Total summed time of all bookings in hours`
+   - **Definition:** choose `Custom Expression`
    - **Expression:**
      ```
      Sum([End Time] - [Start Time]) / interval(1, 'hour')
      ```
 
-### Alternativ SQL för Native Query:
+### Alternative SQL for a Native Query:
 ```sql
 SELECT
     entity_id,
-    SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600) as total_bokad_tid_timmar
+    SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600) as total_booked_hours
 FROM bookings
 GROUP BY entity_id
 ```
 
-### Användningsexempel:
-- Total utnyttjandetid per rum
-- Identifiera mest använda resurser (totalt)
-- Kapacitetsplanering (hur många timmar bokas per vecka/månad?)
+### Usage examples:
+- Total utilisation time per room
+- Identify the most used resources (in total)
+- Capacity planning (how many hours are booked per week/month?)
 
 ---
 
-## 4. Unika användare
+## 4. Unique users
 
-**Namn:** `Unika användare`
-**Tabell:** `bookings`
-**Typ:** Count of distinct values
-**Fält:** `owner_id`
+**Name:** `Unique users`
+**Table:** `bookings`
+**Type:** Count of distinct values
+**Field:** `owner_id`
 
-### Skapa i Metabase:
-1. Gå till **Settings** → **Admin** → **Table Metadata**
-2. Välj databas: `awaio_db`
-3. Hitta tabellen: `bookings`
-4. Klicka på **+ Add a Metric**
-5. Fyll i:
-   - **Name:** `Unika användare`
-   - **Description:** `Antal unika användare som gjort bokningar`
-   - **Definition:** Välj `Distinct values of...`
-   - **Column:** Välj `Owner ID`
-6. Spara
+### Create in Metabase:
+1. Go to **Settings** → **Admin** → **Table Metadata**
+2. Choose the database: `awaio_db`
+3. Find the table: `bookings`
+4. Click **+ Add a Metric**
+5. Fill in:
+   - **Name:** `Unique users`
+   - **Description:** `Number of unique users who have made bookings`
+   - **Definition:** choose `Distinct values of...`
+   - **Column:** choose `Owner ID`
+6. Save
 
-### Användningsexempel:
+### Usage example:
 ```sql
--- I Query Builder:
-SELECT "Unika användare" FROM bookings
+-- In the Query Builder:
+SELECT "Unique users" FROM bookings
 GROUP BY entity_id
 
--- Resultat: Antal unika användare per entity
+-- Result: number of unique users per entity
 ```
 
-### Användningsexempel:
-- Identifiera rum med många vs. få unika användare
-- Popularitet över tid (ökar antalet användare?)
-- Jämföra skrivbord vs. rum (vilka har bredare användarbas?)
+### Usage examples:
+- Identify rooms with many vs few unique users
+- Popularity over time (is the number of users increasing?)
+- Compare desks vs rooms (which have the broader user base?)
 
 ---
 
-## Tekniska detaljer: Tidsberäkningar i PostgreSQL
+## Technical details: time calculations in PostgreSQL
 
-### PostgreSQL INTERVAL aritmetik:
+### PostgreSQL INTERVAL arithmetic:
 ```sql
--- Skillnad mellan timestamps ger INTERVAL
-end_time - start_time  -- Resultat: '4 hours 30 minutes'
+-- The difference between timestamps gives an INTERVAL
+end_time - start_time  -- Result: '4 hours 30 minutes'
 
--- Konvertera INTERVAL till sekunder
-EXTRACT(EPOCH FROM (end_time - start_time))  -- Resultat: 16200 (sekunder)
+-- Convert the INTERVAL to seconds
+EXTRACT(EPOCH FROM (end_time - start_time))  -- Result: 16200 (seconds)
 
--- Konvertera sekunder till timmar
-EXTRACT(EPOCH FROM (end_time - start_time)) / 3600  -- Resultat: 4.5 (timmar)
+-- Convert seconds to hours
+EXTRACT(EPOCH FROM (end_time - start_time)) / 3600  -- Result: 4.5 (hours)
 ```
 
 ### Metabase Custom Expression syntax:
-Metabase använder sin egen syntax för tidsberäkningar. Om ovanstående expressions inte fungerar, testa:
+Metabase uses its own syntax for time calculations. If the expressions above do not work, try:
 
-**För timmar:**
+**For hours:**
 ```
 ([End Time] - [Start Time]) / 3600000000000
 ```
-*(Metabase kan representera interval som nanosekunder internt)*
+*(Metabase may represent intervals as nanoseconds internally)*
 
-**Eller använd Native SQL query istället:**
+**Or use a Native SQL query instead:**
 ```sql
 SELECT
     AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600)
@@ -188,148 +188,148 @@ FROM bookings
 
 ---
 
-## Kombinera Metrics med Segments
+## Combining Metrics with Segments
 
-### Exempel: Skapa Segment för "Långa bokningar"
+### Example: create a Segment for "Long bookings"
 
-1. Gå till **Settings** → **Admin** → **Table Metadata**
-2. Välj tabellen: `bookings`
-3. Klicka på **+ Add a Segment**
-4. Namn: `Långa bokningar (>4h)`
+1. Go to **Settings** → **Admin** → **Table Metadata**
+2. Choose the table: `bookings`
+3. Click **+ Add a Segment**
+4. Name: `Long bookings (>4h)`
 5. Filter:
    ```
-   [Total bokad tid (timmar)] > 4
+   [Total booked time (hours)] > 4
    ```
-   *Eller:*
+   *Or:*
    ```
    ([End Time] - [Start Time]) > interval(4, 'hour')
    ```
 
-### Kombinera Segment + Metric:
-- **Segment:** "Långa bokningar (>4h)"
-- **Metric:** "Antal bokningar"
-- **Resultat:** Antal bokningar som är längre än 4 timmar
+### Combine Segment + Metric:
+- **Segment:** "Long bookings (>4h)"
+- **Metric:** "Number of bookings"
+- **Result:** the number of bookings longer than 4 hours
 
 ---
 
-## Använda Metrics i SQL Queries
+## Using Metrics in SQL queries
 
-Du kan **inte** direkt referera till Metrics i Native SQL queries. Men Metrics är användbara när du använder **Query Builder** (GUI).
+You **cannot** reference Metrics directly in Native SQL queries. But Metrics are useful when you use the **Query Builder** (GUI).
 
-### Strategi:
-1. **Skapa Metrics för grundläggande aggregeringar** (som ovan)
-2. **Använd Query Builder för enkla frågor** → Välj Metrics från dropdown
-3. **Använd Native SQL för komplexa analyser** → Skriv formeln direkt (som i dina befintliga queries)
+### Strategy:
+1. **Create Metrics for basic aggregations** (as above)
+2. **Use the Query Builder for simple questions** → choose Metrics from the dropdown
+3. **Use Native SQL for complex analyses** → write the formula directly (as in the existing queries)
 
-### Exempel: Befintlig query med Metric-logik
+### Example: an existing query with Metric logic
 
-**Befintlig SQL (metabase/04_top10_populäraste_rum_med_snitttid.sql):**
+**Existing SQL (metabase/04_top10_most_popular_rooms_avg_duration.sql):**
 ```sql
 SELECT
-    e.name AS rum,
-    COUNT(b.id) AS antal_bokningar,  -- Detta är Metric: "Antal bokningar"
-    ROUND(AVG(EXTRACT(EPOCH FROM (b.end_time - b.start_time)) / 3600)::numeric, 1) AS snitt_timmar  -- Detta är Metric: "Genomsnittlig bokningstid"
+    e.name AS room,
+    COUNT(b.id) AS bookings,  -- This is the Metric "Number of bookings"
+    ROUND(AVG(EXTRACT(EPOCH FROM (b.end_time - b.start_time)) / 3600)::numeric, 1) AS avg_hours_per_booking  -- This is the Metric "Average booking duration"
 FROM bookings b
 JOIN entities e ON b.entity_id = e.id
 WHERE e.group_tag = 'room'
 GROUP BY e.id, e.name
-ORDER BY antal_bokningar DESC
+ORDER BY bookings DESC
 LIMIT 10;
 ```
 
-**Med Query Builder + Metrics:**
-1. Välj tabell: `bookings`
-2. Join med: `entities` (via `entity_id`)
+**With the Query Builder + Metrics:**
+1. Choose the table: `bookings`
+2. Join with: `entities` (via `entity_id`)
 3. Filter: `group_tag = 'room'`
 4. Summarize:
-   - Metric: "Antal bokningar"
-   - Metric: "Genomsnittlig bokningstid (timmar)"
+   - Metric: "Number of bookings"
+   - Metric: "Average booking duration (hours)"
 5. Group by: `entities.name`
-6. Sort: "Antal bokningar" descending
+6. Sort: "Number of bookings" descending
 7. Limit: 10
 
 ---
 
-## Verifiering av Metrics
+## Verifying Metrics
 
-### Test 1: Jämför Metric med direkt SQL
+### Test 1: compare a Metric with direct SQL
 
-**SQL Query:**
+**SQL query:**
 ```sql
 SELECT COUNT(*) FROM bookings;
 ```
 
 **Query Builder:**
-1. Välj tabell: `bookings`
-2. Summarize: "Antal bokningar"
-3. Resultatet ska matcha SQL-frågan
+1. Choose the table: `bookings`
+2. Summarize: "Number of bookings"
+3. The result should match the SQL question
 
-### Test 2: Kontrollera genomsnittlig bokningstid
+### Test 2: check the average booking duration
 
-**SQL Query:**
+**SQL query:**
 ```sql
 SELECT AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600)
 FROM bookings;
 ```
 
 **Query Builder:**
-1. Välj tabell: `bookings`
-2. Summarize: "Genomsnittlig bokningstid (timmar)"
-3. Resultatet ska matcha (inom avrundning)
+1. Choose the table: `bookings`
+2. Summarize: "Average booking duration (hours)"
+3. The result should match (within rounding)
 
 ---
 
-## Felsökning
+## Troubleshooting
 
-### Problem: "Custom Expression" fungerar inte
+### Problem: the "Custom Expression" does not work
 
-**Lösning:** Metabase GUI kan ha begränsningar för komplexa tidsberäkningar. Använd Native SQL istället:
+**Solution:** the Metabase GUI can have limitations for complex time calculations. Use Native SQL instead:
 
 ```sql
--- Skapa en SQL "Saved Question" istället för Metric
+-- Create a SQL "Saved Question" instead of a Metric
 SELECT
-    'Genomsnittlig bokningstid' AS metric_namn,
-    ROUND(AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600)::numeric, 2) AS värde
+    'Average booking duration' AS metric_name,
+    ROUND(AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600)::numeric, 2) AS value
 FROM bookings;
 ```
 
-### Problem: Metric visar fel värde
+### Problem: the Metric shows the wrong value
 
-**Kontrollera:**
-1. **Tidszon:** Är `end_time` och `start_time` i rätt tidszon?
-2. **Enhet:** Är interval i sekunder, millisekunder eller nanosekunder?
-3. **NULL-värden:** Filtrera bort `WHERE end_time IS NOT NULL`
+**Check:**
+1. **Time zone:** are `end_time` and `start_time` in the right time zone?
+2. **Unit:** is the interval in seconds, milliseconds or nanoseconds?
+3. **NULL values:** filter them out with `WHERE end_time IS NOT NULL`
 
-### Problem: Kan inte hitta "Add a Metric"
+### Problem: cannot find "Add a Metric"
 
-**Lösning:**
-- Metrics kräver Admin-behörighet
-- Kontrollera att du är inloggad som Admin-användare
-- Om knappen saknas, kolla Metabase-versionen (gamla versioner har annan UI)
-
----
-
-## Nästa steg
-
-### Fler användbara Metrics:
-1. **"Antal bokningar (rum)"** - COUNT med filter `group_tag = 'room'`
-2. **"Antal bokningar (skrivbord)"** - COUNT med filter `group_tag = 'desk'`
-3. **"Medel kapacitet per bokning"** - AVG(entity.capacity_normal)
-4. **"Peak-timmar (9-17)"** - SUM med filter på EXTRACT(HOUR FROM start_time)
-
-### Segments att skapa:
-1. **"Långa bokningar (>4h)"**
-2. **"Korta bokningar (<1h)"**
-3. **"Kontorstid (9-17)"**
-4. **"Helgbokningar"**
-5. **"Senaste 30 dagarna"**
-
-Dessa kan kombineras med Metrics för kraftfull ad-hoc-analys utan SQL-kunskap!
+**Solution:**
+- Metrics require admin rights
+- Check that you are logged in as an admin user
+- If the button is missing, check the Metabase version (older versions have a different UI)
 
 ---
 
-## Referenser
+## Next steps
+
+### More useful Metrics:
+1. **"Number of bookings (rooms)"** - COUNT with the filter `group_tag = 'room'`
+2. **"Number of bookings (desks)"** - COUNT with the filter `group_tag = 'desk'`
+3. **"Average capacity per booking"** - AVG(entity.capacity_normal)
+4. **"Peak hours (9-17)"** - SUM with a filter on EXTRACT(HOUR FROM start_time)
+
+### Segments to create:
+1. **"Long bookings (>4h)"**
+2. **"Short bookings (<1h)"**
+3. **"Office hours (9-17)"**
+4. **"Weekend bookings"**
+5. **"Last 30 days"**
+
+These can be combined with Metrics for powerful ad hoc analysis without SQL knowledge!
+
+---
+
+## References
 
 - [Metabase Metrics Documentation](https://www.metabase.com/docs/latest/data-modeling/metrics)
 - [PostgreSQL Interval Arithmetic](https://www.postgresql.org/docs/current/functions-datetime.html)
-- Projekt: `/metabase/*.sql` - Befintliga SQL queries som kan dra nytta av Metrics
+- Project: `/metabase/*.sql` - existing SQL queries that can benefit from Metrics

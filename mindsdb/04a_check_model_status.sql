@@ -1,2 +1,2 @@
--- Kontrollera modellens status och detaljer
+-- Check the model's status and details
 DESCRIBE booking_forecast

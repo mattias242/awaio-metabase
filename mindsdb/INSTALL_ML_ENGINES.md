@@ -1,41 +1,41 @@
-# Installera ML-Engines i MindsDB
+# Installing ML engines in MindsDB
 
 ## Problem
-Open source MindsDB saknar ofta ML-engines som `lightwood` installerade by default.
+Open-source MindsDB often lacks ML engines such as `lightwood` by default.
 
-## Lösning 1: Installera lightwood i befintlig container
+## Solution 1: install lightwood in the existing container
 
 ```bash
-# Gå in i MindsDB-containern
+# Open a shell in the MindsDB container
 docker exec -it awaio-mindsdb bash
 
-# Installera lightwood
+# Install lightwood
 pip install lightwood
 
-# Starta om MindsDB (från host)
+# Restart MindsDB (from the host)
 docker-compose restart mindsdb
 ```
 
-## Lösning 2: Skapa egen Dockerfile med ML-engines
+## Solution 2: create your own Dockerfile with ML engines
 
-Skapa `Dockerfile.mindsdb`:
+Create `Dockerfile.mindsdb`:
 
 ```dockerfile
 FROM mindsdb/mindsdb:latest
 
-# Installera ML-engines
+# Install ML engines
 RUN pip install --no-cache-dir \
     lightwood \
     statsforecast \
     neuralforecast
 
-# Exponera portar
+# Expose ports
 EXPOSE 47334 47335 47336
 
 CMD ["python", "-m", "mindsdb"]
 ```
 
-Uppdatera `docker-compose.yml`:
+Update `docker-compose.yml`:
 
 ```yaml
 mindsdb:
@@ -43,32 +43,32 @@ mindsdb:
     context: .
     dockerfile: Dockerfile.mindsdb
   container_name: awaio-mindsdb
-  # ... resten av konfigurationen
+  # ... the rest of the configuration
 ```
 
-Bygg och starta:
+Build and start:
 
 ```bash
 docker-compose build mindsdb
 docker-compose up -d mindsdb
 ```
 
-## Lösning 3: Använd aggregeringsanalyser istället
+## Solution 3: use aggregate analyses instead
 
-Om du inte behöver avancerad ML, kan du använda PostgreSQL-aggregeringar direkt:
+If you do not need advanced ML, you can use PostgreSQL aggregations directly:
 
 ```sql
--- Genomsnittligt antal bokningar per veckodag (senaste 90 dagarna)
+-- Average number of bookings per weekday (last 90 days)
 SELECT
   EXTRACT(DOW FROM start_time) as day_of_week,
   CASE EXTRACT(DOW FROM start_time)
-    WHEN 0 THEN 'Söndag'
-    WHEN 1 THEN 'Måndag'
-    WHEN 2 THEN 'Tisdag'
-    WHEN 3 THEN 'Onsdag'
-    WHEN 4 THEN 'Torsdag'
-    WHEN 5 THEN 'Fredag'
-    WHEN 6 THEN 'Lördag'
+    WHEN 0 THEN 'Sunday'
+    WHEN 1 THEN 'Monday'
+    WHEN 2 THEN 'Tuesday'
+    WHEN 3 THEN 'Wednesday'
+    WHEN 4 THEN 'Thursday'
+    WHEN 5 THEN 'Friday'
+    WHEN 6 THEN 'Saturday'
   END as weekday,
   COUNT(*) as total_bookings,
   ROUND(COUNT(*)::numeric / 13, 1) as avg_per_week
@@ -78,16 +78,16 @@ GROUP BY day_of_week
 ORDER BY day_of_week
 ```
 
-## Lösning 4: Använd Python för ML (utanför MindsDB)
+## Solution 4: use Python for ML (outside MindsDB)
 
-Se `python_ml/` mappen för exempel på att använda scikit-learn, prophet, eller statsmodels direkt för predictions.
+See the `python_ml/` folder for examples of using scikit-learn, prophet or statsmodels directly for predictions.
 
-## Verifiera tillgängliga ML-engines
+## Verify the available ML engines
 
-Kör i MindsDB:
+Run in MindsDB:
 
 ```sql
 SELECT * FROM information_schema.handlers WHERE type = 'ml'
 ```
 
-Om listan är tom = inga ML-engines installerade.
+If the list is empty, no ML engines are installed.

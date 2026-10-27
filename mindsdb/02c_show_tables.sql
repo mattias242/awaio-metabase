@@ -1,2 +1,2 @@
--- Visa alla tabeller i awaio_postgres
+-- Show all tables in awaio_postgres
 SHOW TABLES FROM awaio_postgres

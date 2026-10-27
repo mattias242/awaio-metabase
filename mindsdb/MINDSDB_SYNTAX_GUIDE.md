@@ -1,10 +1,10 @@
 # MindsDB SQL Syntax Guide
 
-## Viktiga Skillnader mot Standard SQL
+## Key differences from standard SQL
 
-MindsDB använder **JOIN-syntax** för att få predictions, inte vanliga SELECT.
+MindsDB uses **JOIN syntax** to get predictions, not a plain SELECT.
 
-## 1. Skapa en Modell
+## 1. Create a model
 
 ```sql
 CREATE MODEL project_name.model_name
@@ -13,13 +13,13 @@ FROM database_name
    FROM table_name
    WHERE conditions)
 PREDICT target_column
-[ORDER BY time_column]  -- För tidsserier
-[WINDOW int]            -- Antal rader att titta tillbaka på
-[HORIZON int]           -- Antal framtida predictions
+[ORDER BY time_column]  -- For time series
+[WINDOW int]            -- Number of rows to look back
+[HORIZON int]           -- Number of future predictions
 [USING engine = 'lightwood'];
 ```
 
-### Exempel: Enkel Prediction
+### Example: simple prediction
 
 ```sql
 CREATE MODEL booking_forecast
@@ -34,30 +34,30 @@ FROM awaio_postgres
 PREDICT booking_count
 ```
 
-### Exempel: Tidsserie med WINDOW och HORIZON
+### Example: time series with WINDOW and HORIZON
 
 ```sql
 CREATE MODEL house_sales_predictor
 FROM files
   (SELECT * FROM house_sales)
 PREDICT MA
-ORDER BY saledate  -- Tidsserie-kolumn
-WINDOW 8           -- Använd 8 tidigare rader
-HORIZON 4          -- Predicera 4 framtida rader
+ORDER BY saledate  -- Time series column
+WINDOW 8           -- Use the 8 previous rows
+HORIZON 4          -- Predict 4 future rows
 ```
 
-## 2. Få Predictions (VIKTIGT!)
+## 2. Getting predictions (IMPORTANT!)
 
-### ❌ FUNGERAR INTE:
+### ❌ DOES NOT WORK:
 ```sql
--- Detta fungerar INTE i MindsDB!
+-- This does NOT work in MindsDB!
 SELECT * FROM booking_forecast
 WHERE booking_date > CURRENT_DATE
 ```
 
-### ✅ RÄTT SYNTAX - Använd JOIN:
+### ✅ CORRECT SYNTAX - use JOIN:
 
-**A. Predictions från ny data (JOIN med data table):**
+**A. Predictions from new data (JOIN with a data table):**
 ```sql
 SELECT
   t.booking_date,
@@ -68,14 +68,14 @@ JOIN booking_forecast AS m
 LIMIT 14
 ```
 
-**B. Framtida predictions (time series):**
+**B. Future predictions (time series):**
 ```sql
 SELECT
   m.booking_date AS date,
   m.booking_count AS forecast
 FROM booking_forecast AS m
 JOIN awaio_postgres.bookings AS t
-WHERE t.booking_date > LATEST  -- Speciellt MindsDB keyword för tidsserier
+WHERE t.booking_date > LATEST  -- Special MindsDB keyword for time series
 LIMIT 14
 ```
 
@@ -90,14 +90,14 @@ JOIN mindsdb.home_rentals_model AS m
 WHERE t.number_of_rooms > 2
 ```
 
-## 3. USING Clause Parameters
+## 3. USING clause parameters
 
-### Vanliga Engines:
-- `lightwood` - Default ML engine (installerat nu!)
-- `huggingface` - För NLP-modeller
-- `openai_engine` - För LLM-modeller
+### Common engines:
+- `lightwood` - default ML engine (installed now!)
+- `huggingface` - for NLP models
+- `openai_engine` - for LLM models
 
-### Parametrar:
+### Parameters:
 ```sql
 USING
   engine = 'lightwood',
@@ -105,96 +105,96 @@ USING
   stop_train_in_x_seconds = 60
 ```
 
-## 4. Tidsserie-Specifika Features
+## 4. Time-series-specific features
 
 ### ORDER BY
-Anger kolumn som representerar tid/sekvens:
+Specifies the column that represents time/sequence:
 ```sql
 ORDER BY saledate
 ```
 
 ### WINDOW
-Antal tidigare rader att använda för prediction:
+Number of previous rows to use for the prediction:
 ```sql
-WINDOW 8  -- Använd senaste 8 raderna
+WINDOW 8  -- Use the last 8 rows
 ```
 
 ### HORIZON
-Antal framtida predictions:
+Number of future predictions:
 ```sql
-HORIZON 4  -- Predicera 4 steg framåt
+HORIZON 4  -- Predict 4 steps ahead
 ```
 
-### LATEST Keyword
-Används i WHERE för att få framtida predictions:
+### LATEST keyword
+Used in WHERE to get future predictions:
 ```sql
 WHERE t.saledate > LATEST
 ```
 
-## 5. Hantera Modeller
+## 5. Managing models
 
-### Visa alla modeller:
+### Show all models:
 ```sql
 SHOW MODELS;
 ```
 
-### Se modellstatus:
+### See the model status:
 ```sql
 DESCRIBE model_name;
 ```
 
-### Ta bort modell:
+### Delete a model:
 ```sql
 DROP MODEL model_name;
 ```
 
-### Retrain modell:
+### Retrain a model:
 ```sql
 RETRAIN model_name;
 ```
 
-## 6. Begränsningar
+## 6. Limitations
 
-- ❌ CASE-uttryck fungerar INTE i SELECT från modeller
-- ❌ Komplexa aggregeringar i SELECT fungerar INTE
-- ✅ Använd JOIN-syntax för alla predictions
-- ✅ Gör transformationer i träningsdata (CREATE MODEL FROM clause)
+- ❌ CASE expressions do NOT work in SELECT from models
+- ❌ Complex aggregations in SELECT do NOT work
+- ✅ Use JOIN syntax for all predictions
+- ✅ Do transformations in the training data (the CREATE MODEL FROM clause)
 
-## 7. Best Practices
+## 7. Best practices
 
-1. **Förbered data i CREATE MODEL:**
-   - Gör alla CASE, aggregeringar, och transformationer i FROM-clause
-   - Håll prediction queries enkla (bara JOIN)
+1. **Prepare the data in CREATE MODEL:**
+   - Do all CASE, aggregations and transformations in the FROM clause
+   - Keep prediction queries simple (just a JOIN)
 
-2. **Tidsserie-modeller:**
-   - Använd alltid ORDER BY för tidsserier
-   - Sätt WINDOW baserat på säsongsmönster
-   - HORIZON = antal steg du vill predicera framåt
+2. **Time series models:**
+   - Always use ORDER BY for time series
+   - Set WINDOW based on seasonal patterns
+   - HORIZON = number of steps you want to predict ahead
 
 3. **Testing:**
-   - Kolla alltid `DESCRIBE model_name` för status
-   - Vänta tills STATUS = 'complete'
-   - Testa med LIMIT först
+   - Always check `DESCRIBE model_name` for the status
+   - Wait until STATUS = 'complete'
+   - Test with LIMIT first
 
 4. **Performance:**
-   - Filtrera i JOIN WHERE-clause
-   - Använd LIMIT för stora datasets
-   - Mindre träningsdata = snabbare training
+   - Filter in the JOIN WHERE clause
+   - Use LIMIT for large datasets
+   - Less training data = faster training
 
 ## 8. Troubleshooting
 
 ### "Unknown select target"
-- **Problem**: Använder CASE eller komplex SELECT från modell
-- **Lösning**: Flytta logiken till CREATE MODEL FROM clause
+- **Problem**: using CASE or a complex SELECT from a model
+- **Solution**: move the logic to the CREATE MODEL FROM clause
 
 ### "No module named 'lightwood'"
-- **Problem**: ML-engine inte installerad
-- **Lösning**: `docker exec awaio-mindsdb pip install lightwood`
+- **Problem**: the ML engine is not installed
+- **Solution**: `docker exec awaio-mindsdb pip install lightwood`
 
 ### "Column not found"
-- **Problem**: Kolumnnamn stämmer inte mellan data och modell
-- **Lösning**: Kontrollera kolumnnamn i DESCRIBE model_name
+- **Problem**: the column names differ between the data and the model
+- **Solution**: check the column names in DESCRIBE model_name
 
-### Modellen tränar inte
-- **Problem**: För lite data eller fel datatyper
-- **Lösning**: Minst 50-100 rader data rekommenderas
+### The model does not train
+- **Problem**: too little data or wrong data types
+- **Solution**: at least 50-100 rows of data are recommended

@@ -1,9 +1,9 @@
--- MindsDB Setup Script för Awaio
--- Kör denna fil i MindsDB Web UI (http://localhost:47334) eller via MySQL client
--- Detta script skapar databasanslutning och grundläggande ML-modeller
+-- MindsDB setup script for Awaio
+-- Run this file in the MindsDB Web UI (http://localhost:47334) or via a MySQL client
+-- This script creates the database connection and basic ML models
 
 -- ===========================================
--- STEG 1: Anslut till PostgreSQL
+-- STEP 1: Connect to PostgreSQL
 -- ===========================================
 
 CREATE DATABASE awaio_postgres
@@ -16,14 +16,14 @@ PARAMETERS = {
   "password": "change_me"
 };
 
--- Verifiera anslutningen
+-- Verify the connection
 SHOW DATABASES;
 
--- Testa att läsa data
+-- Test reading data
 SELECT * FROM awaio_postgres.bookings LIMIT 5;
 
 -- ===========================================
--- STEG 2: Skapa Bokningsprognos-modell
+-- STEP 2: Create the booking forecast model
 -- ===========================================
 
 CREATE MODEL booking_forecaster
@@ -45,7 +45,7 @@ USING
   horizon = 14;
 
 -- ===========================================
--- STEG 3: Skapa Kapacitetsutnyttjande-modell
+-- STEP 3: Create the capacity utilisation model
 -- ===========================================
 
 CREATE MODEL hourly_capacity_predictor
@@ -67,7 +67,7 @@ USING
   engine = 'lightwood';
 
 -- ===========================================
--- STEG 4: Skapa Skrivbordspopularitets-modell
+-- STEP 4: Create the desk popularity model
 -- ===========================================
 
 CREATE MODEL desk_popularity_predictor
@@ -91,26 +91,26 @@ USING
   engine = 'lightwood';
 
 -- ===========================================
--- STEG 5: Verifiera att modellerna skapats
+-- STEP 5: Verify that the models were created
 -- ===========================================
 
 SHOW MODELS;
 
 -- ===========================================
--- EXEMPEL: Testa predictions
+-- EXAMPLE: Test predictions
 -- ===========================================
 
--- Prediction 1: Bokningar nästa 14 dagar
+-- Prediction 1: Bookings for the next 14 days
 SELECT
   booking_date,
   CASE day_of_week
-    WHEN 0 THEN 'Söndag'
-    WHEN 1 THEN 'Måndag'
-    WHEN 2 THEN 'Tisdag'
-    WHEN 3 THEN 'Onsdag'
-    WHEN 4 THEN 'Torsdag'
-    WHEN 5 THEN 'Fredag'
-    WHEN 6 THEN 'Lördag'
+    WHEN 0 THEN 'Sunday'
+    WHEN 1 THEN 'Monday'
+    WHEN 2 THEN 'Tuesday'
+    WHEN 3 THEN 'Wednesday'
+    WHEN 4 THEN 'Thursday'
+    WHEN 5 THEN 'Friday'
+    WHEN 6 THEN 'Saturday'
   END as weekday,
   booking_count as predicted_bookings
 FROM booking_forecaster
@@ -118,7 +118,7 @@ WHERE booking_date > CURRENT_DATE
 ORDER BY booking_date
 LIMIT 14;
 
--- Prediction 2: Kapacitet imorgon per timme
+-- Prediction 2: Capacity tomorrow per hour
 SELECT
   time_slot,
   hour_of_day,
@@ -128,7 +128,7 @@ FROM hourly_capacity_predictor
 WHERE time_slot::date = CURRENT_DATE + INTERVAL '1 day'
 ORDER BY hour_of_day;
 
--- Prediction 3: Mest populära skrivbord nästa vecka
+-- Prediction 3: Most popular desks next week
 SELECT
   desk_name,
   weekly_bookings as predicted_bookings,

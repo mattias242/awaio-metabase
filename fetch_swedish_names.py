@@ -11,7 +11,7 @@ def fetch_male_names():
     url = 'https://api.scb.se/OV0104/v1/doris/sv/ssd/START/BE/BE0001/BE0001G/BE0001F100'
     payload = {"query": [], "response": {"format": "json"}}
 
-    print("Hämtar mansnamn från SCB...")
+    print("Fetching male names from SCB...")
     response = requests.post(url, json=payload)
     data = response.json()
 
@@ -25,7 +25,7 @@ def fetch_male_names():
             # Skip names with '..' or other non-numeric values
             continue
 
-    # Sortera och ta top 100
+    # Sort and take the top 100
     names = sorted(names, key=lambda x: x[1], reverse=True)[:100]
     return [name for name, _ in names]
 
@@ -35,7 +35,7 @@ def fetch_female_names():
     url = 'https://api.scb.se/OV0104/v1/doris/sv/ssd/START/BE/BE0001/BE0001G/BE0001F100'
     payload = {"query": [], "response": {"format": "json"}}
 
-    print("Hämtar kvinnonamn från SCB...")
+    print("Fetching female names from SCB...")
     response = requests.post(url, json=payload)
     data = response.json()
 
@@ -49,7 +49,7 @@ def fetch_female_names():
             # Skip names with '..' or other non-numeric values
             continue
 
-    # Sortera och ta top 100
+    # Sort and take the top 100
     names = sorted(names, key=lambda x: x[1], reverse=True)[:100]
     return [name for name, _ in names]
 
@@ -57,7 +57,7 @@ def fetch_surnames():
     """Fetch surnames from Skatteverket."""
     url = 'https://skatteverket.se/download/18.25688d121956e35b0c218b2/1743510574534/Fria_efternamn_namn_antal_textfil_2025.txt'
 
-    print("Hämtar efternamn från Skatteverket...")
+    print("Fetching surnames from Skatteverket...")
     response = requests.get(url)
 
     # Parse the text file
@@ -69,13 +69,13 @@ def fetch_surnames():
         if not line or line.startswith('Namn') or line.startswith('---'):
             continue
 
-        # Format: "Namn    Antal"
+        # Format: "Name    Count" (column headers are in Swedish)
         parts = line.split()
         if len(parts) >= 2:
             name = parts[0]
             surnames.append(name)
 
-    # Ta top 200 efternamn
+    # Take the top 200 surnames
     return surnames[:200]
 
 if __name__ == '__main__':
@@ -84,14 +84,14 @@ if __name__ == '__main__':
     female_names = fetch_female_names()
     surnames = fetch_surnames()
 
-    print(f"\n✓ Hämtade {len(male_names)} mansnamn")
-    print(f"  Exempel: {', '.join(male_names[:10])}")
+    print(f"\n✓ Fetched {len(male_names)} male names")
+    print(f"  Examples: {', '.join(male_names[:10])}")
 
-    print(f"\n✓ Hämtade {len(female_names)} kvinnonamn")
-    print(f"  Exempel: {', '.join(female_names[:10])}")
+    print(f"\n✓ Fetched {len(female_names)} female names")
+    print(f"  Examples: {', '.join(female_names[:10])}")
 
-    print(f"\n✓ Hämtade {len(surnames)} efternamn")
-    print(f"  Exempel: {', '.join(surnames[:10])}")
+    print(f"\n✓ Fetched {len(surnames)} surnames")
+    print(f"  Examples: {', '.join(surnames[:10])}")
 
     # Save to JSON file
     data = {
@@ -103,4 +103,4 @@ if __name__ == '__main__':
     with open('swedish_names.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    print(f"\n✓ Sparat till swedish_names.json")
+    print(f"\n✓ Saved to swedish_names.json")

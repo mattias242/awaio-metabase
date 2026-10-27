@@ -4,18 +4,18 @@ FROM python:3.11-slim
 LABEL maintainer="Awaio Booking System"
 LABEL description="Python fetcher for Awaio API data"
 
-# Installera dependencies
+# Install dependencies
 WORKDIR /app
 
-# Kopiera requirements först (för bättre cache)
+# Copy requirements first (for better caching)
 COPY requirements-fetcher.txt .
 RUN pip install --no-cache-dir -r requirements-fetcher.txt
 
-# Kopiera Python-scripts
+# Copy Python scripts
 COPY fetch_bookings.py fetch_entities.py anonymize.py scheduler_loop.py ./
 
-# Skapa logs-mapp
+# Create the logs directory
 RUN mkdir -p /app/logs
 
-# Default command (kan overridas)
+# Default command (can be overridden)
 CMD ["python3", "fetch_bookings.py", "--days", "2", "--stats"]

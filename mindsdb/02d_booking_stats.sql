@@ -1,4 +1,4 @@
--- Se statistik över dina bokningar
+-- See statistics on your bookings
 SELECT
   COUNT(*) as total_bookings,
   COUNT(DISTINCT owner_id) as unique_users,

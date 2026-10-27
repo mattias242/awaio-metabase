@@ -1,6 +1,6 @@
--- Steg 3: Skapa din första prediktionsmodell
--- Denna modell predicerar antal bokningar per dag
--- OBS: För open source MindsDB, använd lightwood engine (default)
+-- Step 3: Create your first prediction model
+-- This model predicts the number of bookings per day
+-- NOTE: For open source MindsDB, use the lightwood engine (default)
 
 CREATE MODEL booking_forecast
 FROM awaio_postgres
@@ -15,5 +15,5 @@ FROM awaio_postgres
    ORDER BY booking_date)
 PREDICT booking_count
 
--- OBS: Detta kan ta 2-5 minuter första gången!
--- Du kan se status med: DESCRIBE booking_forecast;
+-- NOTE: This can take 2-5 minutes the first time!
+-- You can check the status with: DESCRIBE booking_forecast;

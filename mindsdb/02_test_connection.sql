@@ -1,18 +1,18 @@
 -- ========================================
--- Steg 2: Testa anslutningen
--- OBS: Kör varje query SEPARAT (en i taget)!
+-- Step 2: Test the connection
+-- NOTE: Run each query SEPARATELY (one at a time)!
 -- ========================================
 
--- Query 1: Visa alla databaser (du ska se awaio_postgres här)
+-- Query 1: Show all databases (you should see awaio_postgres here)
 SHOW DATABASES
 
--- Query 2: Testa att läsa från bookings-tabellen
+-- Query 2: Test reading from the bookings table
 -- SELECT * FROM awaio_postgres.bookings LIMIT 10
 
--- Query 3: Visa alla tabeller i awaio_postgres
+-- Query 3: Show all tables in awaio_postgres
 -- SHOW TABLES FROM awaio_postgres
 
--- Query 4: Se statistik över dina bokningar
+-- Query 4: See statistics on your bookings
 -- SELECT
 --   COUNT(*) as total_bookings,
 --   COUNT(DISTINCT owner_id) as unique_users,

@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-# Dagligt backup-script för Awaio på Windows
+# Daily backup script for Awaio on Windows
 # Registreras i Windows Task Scheduler av windows-setup.ps1
 
 $ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -20,7 +20,7 @@ Log "========================================"
 Log "Backup started: $(Get-Date)"
 Log "========================================"
 
-# Kontrollera att PostgreSQL-containern körs
+# Check that the PostgreSQL container is running
 $running = docker ps --filter "name=awaio-postgres" --format "{{.Names}}" 2>&1
 if ($running -notmatch "awaio-postgres") {
     Log "ERROR: PostgreSQL container is not running"
@@ -107,7 +107,7 @@ Log "Backup finished: $(Get-Date)"
 Log "========================================="
 Log ""
 
-# Rensa loggar äldre än 7 dagar
+# Remove logs older than 7 days
 Get-ChildItem -Path $LogDir -Filter "backup_*.log" |
     Where-Object { $_.LastWriteTime -lt $cutoff } |
     Remove-Item -Force

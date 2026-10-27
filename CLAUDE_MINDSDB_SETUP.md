@@ -1,28 +1,28 @@
-# Konfigurera Claude i MindsDB
+# Configuring Claude in MindsDB
 
-MindsDB kan använda Claude som LLM för att analysera och interagera med din bokningsdata på naturligt språk.
+MindsDB can use Claude as the LLM to analyse and interact with your booking data in natural language.
 
-## Steg 1: Skaffa Anthropic API-nyckel
+## Step 1: Get an Anthropic API key
 
-1. Gå till https://console.anthropic.com/
-2. Skapa ett konto eller logga in
-3. Navigera till "API Keys"
-4. Skapa en ny API-nyckel och kopiera den
+1. Go to https://console.anthropic.com/
+2. Create an account or log in
+3. Navigate to "API Keys"
+4. Create a new API key and copy it
 
-## Steg 2: Konfigurera Claude i MindsDB
+## Step 2: Configure Claude in MindsDB
 
-Öppna MindsDB Web UI på http://localhost:47334 och kör följande SQL:
+Open the MindsDB Web UI at http://localhost:47334 and run the following SQL:
 
 ```sql
 CREATE ML_ENGINE anthropic_engine
 FROM anthropic
 USING
-  api_key = 'din-anthropic-api-nyckel';
+  api_key = 'your-anthropic-api-key';
 ```
 
-## Steg 3: Skapa en Claude-modell
+## Step 3: Create a Claude model
 
-### Exempel 1: Bokningsanalys med Claude
+### Example 1: booking analysis with Claude
 
 ```sql
 CREATE MODEL awaio_chat_model
@@ -30,12 +30,12 @@ PREDICT answer
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Analysera följande bokningsdata och svara på frågan: {{question}}.
+  prompt_template = 'Analyse the following booking data and answer the question: {{question}}.
 
   Data: {{context}}';
 ```
 
-### Exempel 2: Generera insikter från bokningsdata
+### Example 2: generate insights from booking data
 
 ```sql
 CREATE MODEL booking_insights
@@ -43,21 +43,21 @@ PREDICT insight
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Baserat på dessa bokningar: {{booking_data}},
+  prompt_template = 'Based on these bookings: {{booking_data}},
 
-  Ge insikter om:
-  1. Populäraste tider
-  2. Användningsmönster
-  3. Rekommendationer för optimering';
+  Give insights about:
+  1. The most popular times
+  2. Usage patterns
+  3. Recommendations for optimisation';
 ```
 
-## Steg 4: Använd Claude för att analysera data
+## Step 4: Use Claude to analyse data
 
-### Fråga om bokningsdata
+### Ask about booking data
 ```sql
 SELECT answer
 FROM awaio_chat_model
-WHERE question = 'Vilka är de mest populära skrivborden under måndagar kl 09-12?'
+WHERE question = 'Which are the most popular desks on Mondays between 09 and 12?'
 AND context = (
   SELECT JSON_AGG(
     JSON_BUILD_OBJECT(
@@ -76,7 +76,7 @@ AND context = (
 );
 ```
 
-### Få sammanfattning av bokningsdata
+### Get a summary of the booking data
 ```sql
 SELECT insight
 FROM booking_insights
@@ -94,9 +94,9 @@ WHERE booking_data = (
 );
 ```
 
-## Avancerade användningsfall
+## Advanced use cases
 
-### 1. Chatbot för bokningshistorik
+### 1. Chatbot for the booking history
 
 ```sql
 CREATE MODEL booking_chatbot
@@ -104,20 +104,20 @@ PREDICT response
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Du är en hjälpsam assistent för Awaio-bokningssystemet.
+  prompt_template = 'You are a helpful assistant for the Awaio booking system.
 
-  Bokningsdata: {{booking_context}}
+  Booking data: {{booking_context}}
 
-  Användarfråga: {{user_question}}
+  User question: {{user_question}}
 
-  Svara på svenska och ge konkreta insikter baserade på datan.';
+  Answer in English and give concrete insights based on the data.';
 ```
 
-Använd chatten:
+Use the chat:
 ```sql
 SELECT response
 FROM booking_chatbot
-WHERE user_question = 'Hur många bokningar hade vi förra veckan jämfört med denna vecka?'
+WHERE user_question = 'How many bookings did we have last week compared with this week?'
 AND booking_context = (
   SELECT JSON_BUILD_OBJECT(
     'last_week', (
@@ -133,7 +133,7 @@ AND booking_context = (
 );
 ```
 
-### 2. Generera rekommendationer
+### 2. Generate recommendations
 
 ```sql
 CREATE MODEL desk_recommendations
@@ -141,14 +141,14 @@ PREDICT recommendation
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Baserat på användarens bokningshistorik: {{user_history}}
+  prompt_template = 'Based on the user''s booking history: {{user_history}}
 
-  Och tillgängliga skrivbord: {{available_desks}}
+  And the available desks: {{available_desks}}
 
-  Rekommendera de 3 bästa skrivborden för användaren och förklara varför.';
+  Recommend the 3 best desks for the user and explain why.';
 ```
 
-### 3. Anomali-förklaring
+### 3. Anomaly explanation
 
 ```sql
 CREATE MODEL anomaly_explainer
@@ -156,14 +156,14 @@ PREDICT explanation
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Analysera denna bokning som kan vara ovanlig: {{booking_details}}
+  prompt_template = 'Analyse this booking, which may be unusual: {{booking_details}}
 
-  Jämför med normala mönster: {{normal_patterns}}
+  Compare with the normal patterns: {{normal_patterns}}
 
-  Förklara varför denna bokning kan vara ovanlig och om det kräver uppmärksamhet.';
+  Explain why this booking may be unusual and whether it needs attention.';
 ```
 
-### 4. Naturlig språk till SQL
+### 4. Natural language to SQL
 
 ```sql
 CREATE MODEL nl_to_sql
@@ -171,29 +171,29 @@ PREDICT sql_query
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'Databasschema:
+  prompt_template = 'Database schema:
   - bookings (id, entity_id, owner_id, start_time, end_time, status)
   - entities (id, name, group_tag, parent_id)
   - users (id, email, display_name)
 
-  Användares fråga: {{natural_language_query}}
+  User question: {{natural_language_query}}
 
-  Generera en korrekt PostgreSQL-query för att svara på frågan.';
+  Generate a correct PostgreSQL query that answers the question.';
 ```
 
-Använd NL-to-SQL:
+Using NL-to-SQL:
 ```sql
 SELECT sql_query
 FROM nl_to_sql
-WHERE natural_language_query = 'Visa alla bokningar för skrivbord som är längre än 4 timmar';
+WHERE natural_language_query = 'Show all desk bookings longer than 4 hours';
 ```
 
-## Kombinera Claude med ML-modeller
+## Combining Claude with ML models
 
-### Förklara ML-prediktioner med Claude
+### Explaining ML predictions with Claude
 
 ```sql
--- Först: Skapa en prediktionsmodell
+-- First: create a prediction model
 CREATE MODEL booking_predictor
 FROM awaio_postgres (
   SELECT
@@ -206,24 +206,24 @@ FROM awaio_postgres (
 )
 PREDICT booking_count;
 
--- Sedan: Använd Claude för att förklara prediktionen
+-- Then: use Claude to explain the prediction
 CREATE MODEL prediction_explainer
 PREDICT explanation
 USING
   engine = 'anthropic_engine',
   model_name = 'claude-3-5-sonnet-20241022',
-  prompt_template = 'ML-modellen förutspår: {{prediction}}
+  prompt_template = 'The ML model predicts: {{prediction}}
 
-  Förklara denna prediktion i enkla termer och ge rekommendationer.';
+  Explain this prediction in simple terms and give recommendations.';
 ```
 
-## Python-exempel
+## Python example
 
 ```python
 import mysql.connector
 import os
 
-# Anslut till MindsDB
+# Connect to MindsDB
 connection = mysql.connector.connect(
     host='localhost',
     port=47335,
@@ -233,7 +233,7 @@ connection = mysql.connector.connect(
 
 cursor = connection.cursor()
 
-# Konfigurera Claude engine
+# Configure the Claude engine
 cursor.execute(f"""
     CREATE ML_ENGINE IF NOT EXISTS anthropic_engine
     FROM anthropic
@@ -241,22 +241,22 @@ cursor.execute(f"""
       api_key = '{os.getenv("ANTHROPIC_API_KEY")}';
 """)
 
-# Skapa en chatbot-modell
+# Create a chatbot model
 cursor.execute("""
     CREATE MODEL IF NOT EXISTS booking_chat
     PREDICT response
     USING
       engine = 'anthropic_engine',
       model_name = 'claude-3-5-sonnet-20241022',
-      prompt_template = 'Bokningsdata: {{data}}
+      prompt_template = 'Booking data: {{data}}
 
-      Fråga: {{question}}
+      Question: {{question}}
 
-      Svara på svenska.';
+      Answer in English.';
 """)
 
-# Ställ en fråga
-question = "Vilka skrivbord är mest populära?"
+# Ask a question
+question = "Which desks are the most popular?"
 cursor.execute(f"""
     SELECT response
     FROM booking_chat
@@ -278,68 +278,68 @@ cursor.execute(f"""
 """)
 
 result = cursor.fetchone()
-print(f"Claude svarar: {result[0]}")
+print(f"Claude answers: {result[0]}")
 
 cursor.close()
 connection.close()
 ```
 
-## Miljövariabler
+## Environment variables
 
-Lägg till din Anthropic API-nyckel i `.env`:
+Add your Anthropic API key to `.env`:
 
 ```bash
 # Anthropic API Configuration
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 ```
 
-## Tips och bästa praxis
+## Tips and best practices
 
-1. **Välj rätt Claude-modell**:
-   - `claude-3-5-sonnet-20241022`: Bäst balans mellan hastighet och kvalitet
-   - `claude-3-opus-20240229`: Högsta kvalitet, långsammare
-   - `claude-3-haiku-20240307`: Snabbast, för enklare uppgifter
+1. **Choose the right Claude model**:
+   - `claude-3-5-sonnet-20241022`: best balance between speed and quality
+   - `claude-3-opus-20240229`: highest quality, slower
+   - `claude-3-haiku-20240307`: fastest, for simpler tasks
 
-2. **Optimera prompts**:
-   - Var specifik i dina instruktioner
-   - Inkludera exempel i prompt_template
-   - Begränsa datamängd till relevanta fält
+2. **Optimise prompts**:
+   - Be specific in your instructions
+   - Include examples in the prompt_template
+   - Limit the data to the relevant fields
 
-3. **Hantera kostnader**:
-   - Cacha ofta använda queries
-   - Använd Haiku för enkla uppgifter
-   - Begränsa context-storlek
+3. **Manage costs**:
+   - Cache frequently used queries
+   - Use Haiku for simple tasks
+   - Limit the context size
 
-4. **Säkerhet**:
-   - Lagra API-nycklar i miljövariabler
-   - Använd aldrig hårdkodade nycklar
-   - Begränsa åtkomst till MindsDB
+4. **Security**:
+   - Store API keys in environment variables
+   - Never use hard-coded keys
+   - Restrict access to MindsDB
 
-## Felsökning
+## Troubleshooting
 
-### Kontrollera att engine är skapad
+### Check that the engine has been created
 ```sql
 SHOW ML_ENGINES;
 ```
 
-### Lista alla modeller
+### List all models
 ```sql
 SHOW MODELS;
 ```
 
-### Se modelldetaljer
+### See the model details
 ```sql
 DESCRIBE booking_chat;
 ```
 
-### Testa anslutning
+### Test the connection
 ```sql
 SELECT *
 FROM anthropic_engine
-WHERE prompt = 'Säg hej!';
+WHERE prompt = 'Say hello!';
 ```
 
-## Resurser
+## Resources
 
 - [MindsDB + Anthropic Documentation](https://docs.mindsdb.com/integrations/ai-engines/anthropic)
 - [Claude API Documentation](https://docs.anthropic.com/)

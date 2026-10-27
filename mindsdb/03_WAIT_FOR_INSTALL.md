@@ -1,35 +1,35 @@
-# ⏳ Lightwood installeras just nu!
+# ⏳ Lightwood is being installed!
 
 ## Status
-Lightwood-paketet (ML-engine för MindsDB) installeras i din MindsDB-container.
+The Lightwood package (ML engine for MindsDB) is being installed in your MindsDB container.
 
-**Nuvarande steg:** Laddar ner och installerar:
-- ✅ sktime (36.7 MB) - KLART
-- ⏳ torch (102.1 MB) - PÅGÅR...
-- ⏳ Diverse dependencies (statsforecast, optuna, xgboost, etc.)
+**Current step:** downloading and installing:
+- ✅ sktime (36.7 MB) - DONE
+- ⏳ torch (102.1 MB) - IN PROGRESS...
+- ⏳ Various dependencies (statsforecast, optuna, xgboost, etc.)
 
-## Beräknad tid
-**2-5 minuter** beroende på internetuppkoppling.
+## Estimated time
+**2-5 minutes** depending on your internet connection.
 
-## Vad händer?
+## What is happening?
 ```bash
 docker exec awaio-mindsdb pip install lightwood
 ```
 
-Lightwood är MindsDB:s standardbibliotek för machine learning och krävs för att skapa prediktionsmodeller.
+Lightwood is MindsDB's standard machine-learning library and is required to create prediction models.
 
-## Efter installation
-När installationen är klar (du ser "Successfully installed lightwood..."):
+## After the installation
+When the installation is finished (you see "Successfully installed lightwood..."):
 
-1. **Starta om MindsDB:**
+1. **Restart MindsDB:**
    ```bash
    docker-compose restart mindsdb
    ```
 
-2. **Testa att det fungerar:**
-   Kör [03_first_prediction_model.sql](03_first_prediction_model.sql) i MindsDB Web UI
+2. **Test that it works:**
+   Run [03_first_prediction_model.sql](03_first_prediction_model.sql) in the MindsDB Web UI
 
-3. **Skapa din första ML-modell:**
+3. **Create your first ML model:**
    ```sql
    CREATE MODEL booking_forecast
    FROM awaio_postgres
@@ -45,32 +45,32 @@ När installationen är klar (du ser "Successfully installed lightwood..."):
    PREDICT booking_count
    ```
 
-## Kontrollera installationsstatus
+## Check the installation status
 
-Om du vill se exakt vad som händer:
+If you want to see exactly what is happening:
 ```bash
 docker logs -f awaio-mindsdb
 ```
 
-Tryck Ctrl+C för att sluta följa loggarna.
+Press Ctrl+C to stop following the logs.
 
-## Om något går fel
+## If something goes wrong
 
-**Timeout eller avbruten installation:**
+**Timeout or interrupted installation:**
 ```bash
-# Försök igen
+# Try again
 docker exec awaio-mindsdb pip install lightwood
 ```
 
-**Minne slut:**
+**Out of memory:**
 ```bash
-# Öka Docker memory limit i Docker Desktop → Settings → Resources
-# Rekommenderat: minst 4GB RAM för MindsDB med ML
+# Increase the Docker memory limit in Docker Desktop → Settings → Resources
+# Recommended: at least 4GB RAM for MindsDB with ML
 ```
 
-**Fortfarande problem:**
-Se [INSTALL_ML_ENGINES.md](INSTALL_ML_ENGINES.md) för alternativa lösningar.
+**Still having problems:**
+See [INSTALL_ML_ENGINES.md](INSTALL_ML_ENGINES.md) for alternative solutions.
 
 ---
 
-**Nästa:** När installationen är klar, fortsätt med [QUICKSTART.md](QUICKSTART.md) steg 4.
+**Next:** when the installation is finished, continue with step 4 of [QUICKSTART.md](QUICKSTART.md).

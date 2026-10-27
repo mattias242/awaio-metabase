@@ -1,6 +1,6 @@
 #!/bin/bash
-# Dagligt backup-script för Awaio på Windows/WSL2
-# Körs via Windows Task Scheduler eller WSL crontab kl 02:00
+# Daily backup script for Awaio on Windows/WSL2
+# Runs via Windows Task Scheduler or WSL crontab at 02:00
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
@@ -21,7 +21,7 @@ echo "========================================" >> "$LOG_FILE"
 echo "Backup started: $(date)" >> "$LOG_FILE"
 echo "========================================" >> "$LOG_FILE"
 
-# Kontrollera att PostgreSQL-containern körs
+# Check that the PostgreSQL container is running
 if ! docker ps | grep -q awaio-postgres; then
     log "ERROR: PostgreSQL container is not running"
     exit 1
@@ -90,7 +90,7 @@ log "Backup finished: $(date)"
 log "========================================="
 log ""
 
-# Rensa loggar äldre än 7 dagar
+# Remove logs older than 7 days
 find ./logs -name "backup_*.log" -mtime +7 -delete 2>/dev/null
 
 exit 0

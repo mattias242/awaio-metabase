@@ -1,32 +1,32 @@
-# MindsDB Setup Guide för Awaio
+# MindsDB Setup Guide for Awaio
 
-MindsDB är integrerat med Awaio-systemet för att skapa prediktiva modeller och trendanalyser baserade på bokningsdata.
+MindsDB is integrated with the Awaio system to build predictive models and trend analyses based on the booking data.
 
-## Tillgång
+## Access
 
 - **HTTP API**: http://localhost:47334
 - **MySQL API**: `localhost:47335`
 - **MongoDB API**: `localhost:47336`
 - **Web UI**: http://localhost:47334
 
-## Snabbstart
+## Quick start
 
-### 1. Starta MindsDB
+### 1. Start MindsDB
 
 ```bash
-# Starta alla services (inklusive MindsDB)
+# Start all services (including MindsDB)
 docker-compose up -d
 
-# Kontrollera att MindsDB är igång
+# Check that MindsDB is running
 docker-compose ps mindsdb
 
-# Se MindsDB-loggar
+# Show the MindsDB logs
 docker-compose logs -f mindsdb
 ```
 
-### 2. Anslut till PostgreSQL-databasen
+### 2. Connect to the PostgreSQL database
 
-Kör följande SQL i MindsDB (via HTTP UI eller MySQL client):
+Run the following SQL in MindsDB (via the HTTP UI or a MySQL client):
 
 ```sql
 CREATE DATABASE awaio_postgres
@@ -40,21 +40,21 @@ PARAMETERS = {
 };
 ```
 
-### 3. Testa anslutningen
+### 3. Test the connection
 
 ```sql
--- Kontrollera anslutningen
+-- Check the connection
 SHOW DATABASES;
 
--- Testa att läsa data
+-- Test reading data
 SELECT * FROM awaio_postgres.bookings LIMIT 5;
 ```
 
-## Prediktiva Modeller
+## Predictive models
 
-### Modell 1: Bokningsprognos
+### Model 1: booking forecast
 
-Predicera antalet bokningar för kommande veckor baserat på historisk data.
+Predict the number of bookings for the coming weeks based on historical data.
 
 ```sql
 CREATE MODEL booking_forecaster
@@ -76,9 +76,9 @@ USING
   horizon = 14;
 ```
 
-**Användning:**
+**Usage:**
 ```sql
--- Predicera nästa 14 dagar
+-- Predict the next 14 days
 SELECT
   booking_date,
   day_of_week,
@@ -89,9 +89,9 @@ ORDER BY booking_date
 LIMIT 14;
 ```
 
-### Modell 2: Skrivbordspopularitet
+### Model 2: desk popularity
 
-Predicera vilka skrivbord som kommer vara mest populära nästa vecka.
+Predict which desks will be the most popular next week.
 
 ```sql
 CREATE MODEL desk_popularity_predictor
@@ -115,9 +115,9 @@ USING
   engine = 'lightwood';
 ```
 
-**Användning:**
+**Usage:**
 ```sql
--- Se predictions för nästa vecka
+-- See the predictions for next week
 SELECT
   desk_name,
   weekly_bookings as predicted_bookings,
@@ -128,9 +128,9 @@ ORDER BY predicted_bookings DESC
 LIMIT 10;
 ```
 
-### Modell 3: Kapacitetsutnyttjande per timme
+### Model 3: hourly capacity utilisation
 
-Predicera hur många skrivbord som kommer användas per timme.
+Predict how many desks will be in use per hour.
 
 ```sql
 CREATE MODEL hourly_capacity_predictor
@@ -152,9 +152,9 @@ USING
   engine = 'lightwood';
 ```
 
-**Användning:**
+**Usage:**
 ```sql
--- Se kapacitet för imorgon
+-- See the capacity for tomorrow
 SELECT
   time_slot,
   hour_of_day,
@@ -165,9 +165,9 @@ WHERE time_slot::date = CURRENT_DATE + INTERVAL '1 day'
 ORDER BY hour_of_day;
 ```
 
-### Modell 4: Användarpreferenser
+### Model 4: user preferences
 
-Predicera vilket skrivbord en användare troligen kommer välja.
+Predict which desk a user is likely to choose.
 
 ```sql
 CREATE MODEL user_desk_preference_predictor
@@ -190,9 +190,9 @@ USING
   engine = 'lightwood';
 ```
 
-**Användning:**
+**Usage:**
 ```sql
--- Rekommendera skrivbord för en specifik användare
+-- Recommend desks for a specific user
 SELECT
   desk_name,
   area_name,
@@ -205,9 +205,9 @@ ORDER BY booking_frequency DESC
 LIMIT 5;
 ```
 
-### Modell 5: Avbokningsprediktion
+### Model 5: cancellation prediction
 
-Predicera sannolikhet för att en bokning kommer avbokas.
+Predict the probability that a booking will be cancelled.
 
 ```sql
 CREATE MODEL cancellation_predictor
@@ -227,9 +227,9 @@ USING
   engine = 'lightwood';
 ```
 
-**Användning:**
+**Usage:**
 ```sql
--- Predicera avbokningsrisk för kommande bokningar
+-- Predict the cancellation risk for upcoming bookings
 SELECT
   b.id as booking_id,
   e.name as entity_name,
@@ -244,36 +244,36 @@ WHERE b.start_time > NOW()
 ORDER BY p.is_cancelled DESC;
 ```
 
-## Hantera Modeller
+## Managing models
 
 ```sql
--- Lista alla modeller
+-- List all models
 SHOW MODELS;
 
--- Se detaljer om en modell
+-- See the details of a model
 DESCRIBE booking_forecaster;
 
--- Ta bort en modell
+-- Delete a model
 DROP MODEL booking_forecaster;
 
--- Retrain en modell (om ny data finns)
+-- Retrain a model (when there is new data)
 RETRAIN booking_forecaster;
 ```
 
-## Använda MindsDB via MySQL Client
+## Using MindsDB via a MySQL client
 
 ```bash
-# Anslut till MindsDB via MySQL-protokollet
+# Connect to MindsDB via the MySQL protocol
 mysql -h 127.0.0.1 -P 47335 -u mindsdb -p
 
-# Eller via Docker
+# Or via Docker
 docker exec -it awaio-mindsdb mysql -h 127.0.0.1 -P 47335 -u mindsdb
 ```
 
-## Använda MindsDB HTTP API
+## Using the MindsDB HTTP API
 
 ```bash
-# Kör SQL via HTTP API
+# Run SQL via the HTTP API
 curl -X POST http://localhost:47334/api/sql/query \
   -H "Content-Type: application/json" \
   -d '{
@@ -281,59 +281,59 @@ curl -X POST http://localhost:47334/api/sql/query \
   }'
 ```
 
-## Integration med Metabase
+## Integration with Metabase
 
-Du kan visa MindsDB predictions i Metabase genom att:
+You can show MindsDB predictions in Metabase by:
 
-1. Skapa en VIEW i PostgreSQL som hämtar predictions från MindsDB
-2. Använda Metabase Native Query för att köra SQL mot MindsDB
-3. Schemalägga predictions och spara till PostgreSQL-tabell
+1. Creating a VIEW in PostgreSQL that fetches predictions from MindsDB
+2. Using a Metabase Native Query to run SQL against MindsDB
+3. Scheduling predictions and saving them to a PostgreSQL table
 
-### Exempel: Skapa VIEW för predictions
+### Example: create a VIEW for predictions
 
 ```sql
--- Kör i PostgreSQL (via pgAdmin eller psql)
+-- Run in PostgreSQL (via pgAdmin or psql)
 CREATE OR REPLACE VIEW booking_predictions AS
 SELECT
   CURRENT_DATE + (n || ' days')::interval as prediction_date,
   EXTRACT(DOW FROM CURRENT_DATE + (n || ' days')::interval) as day_of_week,
-  -- Detta är en placeholder, faktiska predictions måste hämtas från MindsDB
+  -- This is a placeholder; the actual predictions must be fetched from MindsDB
   0 as predicted_bookings
 FROM generate_series(1, 14) n;
 ```
 
 ## Troubleshooting
 
-### MindsDB startar inte
+### MindsDB does not start
 ```bash
-# Kontrollera loggar
+# Check the logs
 docker-compose logs mindsdb
 
-# Starta om MindsDB
+# Restart MindsDB
 docker-compose restart mindsdb
 ```
 
-### Kan inte ansluta till PostgreSQL från MindsDB
-- Kontrollera att båda services är på samma Docker-nätverk (`awaio-network`)
-- Använd hostname `postgres` (inte `localhost`) i anslutningssträngen
-- Verifiera PostgreSQL credentials i `.env`
+### Cannot connect to PostgreSQL from MindsDB
+- Check that both services are on the same Docker network (`awaio-network`)
+- Use the hostname `postgres` (not `localhost`) in the connection string
+- Verify the PostgreSQL credentials in `.env`
 
-### Modellen tränar långsamt
-- MindsDB behöver tillräckligt med historisk data (minst 30-90 dagar rekommenderas)
-- Första träningen kan ta flera minuter beroende på datamängd
-- Använd `LIMIT` i träningsdata för snabbare prototyping
+### The model trains slowly
+- MindsDB needs enough historical data (at least 30-90 days is recommended)
+- The first training can take several minutes depending on the amount of data
+- Use `LIMIT` in the training data for faster prototyping
 
-### Predictions är felaktiga
-- Kontrollera att tillräckligt med träningsdata finns
-- Se till att datatyperna är korrekta (använd `::int`, `::numeric` etc.)
-- Prova olika `engine`-alternativ: `lightwood`, `statsforecast`, `neuralforecast`
+### The predictions are wrong
+- Check that there is enough training data
+- Make sure the data types are correct (use `::int`, `::numeric` etc.)
+- Try different `engine` options: `lightwood`, `statsforecast`, `neuralforecast`
 
-## Nästa Steg
+## Next steps
 
-1. ✅ Anslut MindsDB till PostgreSQL
-2. ✅ Skapa din första modell (börja med `booking_forecaster`)
-3. ✅ Testa predictions
-4. ✅ Integrera predictions i Metabase dashboards
-5. ✅ Sätt upp scheduled retraining
+1. ✅ Connect MindsDB to PostgreSQL
+2. ✅ Create your first model (start with `booking_forecaster`)
+3. ✅ Test the predictions
+4. ✅ Integrate the predictions into Metabase dashboards
+5. ✅ Set up scheduled retraining
 
-Se `setup_mindsdb.sql` för att köra all initial setup automatiskt.
+See `setup_mindsdb.sql` to run all the initial setup automatically.

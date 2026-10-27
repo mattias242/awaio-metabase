@@ -1,6 +1,6 @@
--- Predicera bokningar för de senaste bokningarna
--- VIKTIGT: MindsDB kräver JOIN-syntax för predictions!
--- 0=Söndag, 1=Måndag, 2=Tisdag, 3=Onsdag, 4=Torsdag, 5=Fredag, 6=Lördag
+-- Predict bookings for the latest bookings
+-- IMPORTANT: MindsDB requires JOIN syntax for predictions!
+-- 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
 
 SELECT
   m.booking_date,

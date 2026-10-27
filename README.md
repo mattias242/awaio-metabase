@@ -1,59 +1,59 @@
-# Awaio Booking System — Windows 11 Docker Deployment
+# Awaio Booking Analytics — Windows 11 Docker Deployment
 
-Awaio är ett booking- och entity-management-system som integrerar med Awaio API:et. Data hämtas från API:et (bokningar, entiteter) och lagras i PostgreSQL för analys i Metabase.
+This project imports booking and entity data from the [Awaio](https://awaio.com) API into PostgreSQL and analyses it in Metabase. Awaio is a booking system for desks, rooms and lockers.
 
-Det här repot är konfigurerat för en **lokal deploy på Windows 11 med Docker Desktop** (native PowerShell eller WSL2).
+The repository is set up for a **local deployment on Windows 11 with Docker Desktop** (native PowerShell or WSL2).
 
 ---
 
-## 📊 Systemöversikt
+## 📊 System overview
 
-### Komponenter
+### Components
 
-| Tjänst | Port | Profil | Beskrivning |
-|--------|------|--------|-------------|
-| **PostgreSQL 16** | `localhost:5433` | default | Databas för bookings och entities |
-| **Metabase** | http://localhost:3000 | default | BI och dashboards |
-| **pgAdmin** | http://localhost:5050 | `admin` / `full` | Databashantering i browser |
-| **MindsDB** | http://localhost:47334 | `ai` / `full` | ML/AI-predictions |
-| **Chat App** | http://localhost:8501 | `ai` / `full` | Streamlit-chatt mot MindsDB |
-| **Scheduler** | — | default | Långkörande loop: hämtar bookings + entities och refreshar `bi.v_hour_slots` varje hel timme 07–19 Europe/Stockholm |
-| **Fetcher** | — | `tools` | Samma image som Scheduler — körs ad-hoc för historiska imports (`docker compose --profile tools run --rm fetcher ...`) |
+| Service | Port | Profile | Description |
+|---------|------|---------|-------------|
+| **PostgreSQL 16** | `localhost:5433` | default | Database for bookings and entities |
+| **Metabase** | http://localhost:3000 | default | BI and dashboards |
+| **pgAdmin** | http://localhost:5050 | `admin` / `full` | Database administration in the browser |
+| **MindsDB** | http://localhost:47334 | `ai` / `full` | ML/AI predictions |
+| **Chat App** | http://localhost:8501 | `ai` / `full` | Streamlit chat against MindsDB |
+| **Scheduler** | — | default | Long-running loop: fetches entities and bookings and refreshes `bi.v_hour_slots` every full hour 07–19 Europe/Stockholm |
+| **Fetcher** | — | `tools` | Same image as the scheduler — run ad hoc for historical imports (`docker compose --profile tools run --rm fetcher ...`) |
 
-### Profiler (välj vid `docker compose up`)
+### Profiles (choose with `docker compose up`)
 
-- **Default** (ingen profil): PostgreSQL + Metabase + Scheduler — ~3 GB RAM
+- **Default** (no profile): PostgreSQL + Metabase + Scheduler — ~3 GB RAM
 - `--profile admin`: + pgAdmin — ~3.5 GB RAM
 - `--profile ai`: + MindsDB + Chat — ~5 GB RAM
-- `--profile full`: alla tjänster — ~6 GB RAM
-- `--profile tools`: lägger till `fetcher` (körs ad-hoc med `run --rm`)
+- `--profile full`: all services — ~6 GB RAM
+- `--profile tools`: adds `fetcher` (run ad hoc with `run --rm`)
 
 ---
 
-## 🚀 Snabbstart
+## 🚀 Quick start
 
-### Förutsättningar
+### Prerequisites
 
-- Windows 11 med [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v3.4.0+, Compose v2)
-- PowerShell 5.1+ (för native Windows-setup) eller WSL2 med bash (för WSL-setup)
-- ~6 GB fritt RAM om du vill köra `full`-profilen
-- Portarna `5433` och `3000` lediga
+- Windows 11 with [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v3.4.0+, Compose v2)
+- PowerShell 5.1+ (for the native Windows setup) or WSL2 with bash (for the WSL setup)
+- ~6 GB free RAM if you want to run the `full` profile
+- Ports `5433` and `3000` free
 
-### Setup via PowerShell (rekommenderat)
+### Setup via PowerShell (recommended)
 
 ```powershell
-# Kör som administratör om du vill registrera schemalagda tasks
+# Run as administrator if you want to register scheduled tasks
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 .\windows-setup.ps1
 ```
 
-Scriptet:
-1. Kontrollerar Docker, portar och RAM
-2. Kopierar `.env.example` → `.env` (uppdatera med dina API-credentials!)
-3. Frågar efter profil (Minimal / Admin / AI / Full)
-4. Startar containers
-5. Återställer `metabase/metabase_app_backup.sql.gz` om den finns
-6. Registrerar Windows Task Scheduler-jobb för dagliga backups 02:00 (timvis datahämtning sköts av `awaio-scheduler`-containern)
+The script:
+1. Checks Docker, ports and RAM
+2. Copies `.env.example` → `.env` (update it with your API credentials!)
+3. Asks for a profile (Minimal / Admin / AI / Full)
+4. Starts the containers
+5. Restores `metabase/metabase_app_backup.sql.gz` if it exists
+6. Registers a Windows Task Scheduler job for daily backups at 02:00 (hourly data fetching is handled by the `awaio-scheduler` container)
 
 ### Setup via WSL2/bash
 
@@ -62,105 +62,107 @@ chmod +x windows-setup.sh
 ./windows-setup.sh
 ```
 
-Samma steg som PowerShell-versionen men sätter upp crontab istället för Task Scheduler.
+Same steps as the PowerShell version, but it sets up crontab instead of Task Scheduler.
 
-### Manuell start
+### Manual start
 
 ```bash
 cp .env.example .env
-# Redigera .env och sätt AWAIO_CLIENT_ID / AWAIO_CLIENT_SECRET
+# Edit .env and set AWAIO_CLIENT_ID / AWAIO_CLIENT_SECRET (and change the passwords)
 
-docker compose up -d                    # default-profil
-docker compose --profile full up -d     # alla tjänster
+docker compose up -d                    # default profile
+docker compose --profile full up -d     # all services
 ```
 
 ---
 
-## ⚙️ Automatiska jobb
+## ⚙️ Automatic jobs
 
-### Scheduler-container (`awaio-scheduler`)
+### Scheduler container (`awaio-scheduler`)
 
-Långkörande container som startar automatiskt med default-profilen. Loopen kör en gång per hel timme **07:00–19:00 Europe/Stockholm** och utför, i ordning:
+A long-running container that starts automatically with the default profile. The loop runs once per full hour **07:00–19:00 Europe/Stockholm** and does, in order:
 
-1. `fetch_bookings.py --date (last_fetch - 1d) --days N` — rullande fönster med 24h buffer
-2. `fetch_entities.py --stats`
+1. `fetch_entities.py --stats`
+2. `fetch_bookings.py --date (last_fetch - 1d) --days N` — rolling window with a 24 h buffer
 3. `REFRESH MATERIALIZED VIEW bi.v_hour_slots`
 
-Tiden för senaste lyckade körning lagras i `logs/last_fetch.state`. Filen uppdateras **endast** om alla tre stegen lyckas. Loggar går till stdout (`docker compose logs -f scheduler`) och `logs/scheduler.log` (rotation midnatt, 14 dagars retention). Källa: `scheduler_loop.py`.
+The date of the last successful run is stored in `logs/last_fetch.state`. The file is updated **only** if all three steps succeed. Logs go to stdout (`docker compose logs -f scheduler`) and `logs/scheduler.log` (rotated at midnight, 14 days retention). By default the fetch scripts log summaries and errors only; pass `--verbose` for per-object detail. Source: `scheduler_loop.py`.
 
-### Windows Task Scheduler (registreras av `windows-setup.ps1`)
+### Windows Task Scheduler (registered by `windows-setup.ps1`)
 
-| Task | Schema | Script |
-|------|--------|--------|
-| **Awaio - Daily Backup** | Dagligen 02:00 | `task_backup_windows.ps1` |
+| Task | Schedule | Script |
+|------|----------|--------|
+| **Awaio - Daily Backup** | Daily 02:00 | `task_backup_windows.ps1` |
 
-`task_fetch_bookings_windows.{ps1,sh}` finns kvar för **manuell** ad-hoc-körning och ska **inte** schemaläggas i Task Scheduler så länge `awaio-scheduler`-containern är aktiv — båda delar `logs/last_fetch.state` och skulle kollidera.
+`task_fetch_bookings_windows.{ps1,sh}` remain for **manual** ad hoc runs and should **not** be scheduled in Task Scheduler while the `awaio-scheduler` container is active — both share `logs/last_fetch.state` and would collide.
 
-### WSL2 crontab (alternativ)
+### WSL2 crontab (alternative)
 
 ```bash
-# Registreras automatiskt av windows-setup.sh om du väljer det:
+# Registered automatically by windows-setup.sh if you choose it:
 0 2 * * * cd /path/to/awaio && bash task_backup_windows.sh
 ```
 
-Backups hamnar i `./backups/` (7 dagars retention). Loggar i `./logs/`.
+Backups end up in `./backups/` (7 days retention). Logs in `./logs/`.
 
 ---
 
-## 🔧 Vanliga kommandon
+## 🔧 Common commands
 
-### Start/stopp
+### Start/stop
 
 ```bash
-docker compose up -d           # Starta
-docker compose down            # Stoppa (volymer bevaras)
-docker compose ps              # Container-status
+docker compose up -d           # Start
+docker compose down            # Stop (volumes are kept)
+docker compose ps              # Container status
 docker compose logs -f metabase
 ```
 
-### Manuell datahämtning
+### Manual data fetching
 
-> Den löpande timvisa hämtningen sköts av `awaio-scheduler`-containern (se [Automatiska jobb](#️-automatiska-jobb)). Använd kommandona nedan för historiska imports eller felsökning.
+> The ongoing hourly fetch is handled by the `awaio-scheduler` container (see [Automatic jobs](#️-automatic-jobs)). Use the commands below for historical imports or troubleshooting.
 
 ```powershell
-# Rekommenderat: wrapper-scriptet sköter datumintervall med 24h buffer automatiskt
+# Recommended: the wrapper script works out the date range with a 24 h buffer
 .\task_fetch_bookings_windows.ps1
 ```
 
 ```bash
-# WSL2/bash-motsvarighet
+# WSL2/bash equivalent
 bash task_fetch_bookings_windows.sh
 ```
 
-Direkt mot fetcher-containern om du vill styra intervall själv:
+Directly against the fetcher container if you want to control the range yourself:
 ```bash
-# Senaste dygnet
+# Last 24 hours
 docker compose --profile tools run --rm fetcher \
   python3 fetch_bookings.py --days 1 --stats
 
-# Specifikt datumintervall
+# Specific date range
 docker compose --profile tools run --rm fetcher \
   python3 fetch_bookings.py --date 2025-06-01 --days 30 --stats
 
-# Uppdatera entiteter (körs sällan — bara när nya resurser läggs till)
+# Update entities (rarely needed — only when new resources are added)
 docker compose --profile tools run --rm fetcher \
   python3 fetch_entities.py --stats
 ```
 
-### Databasåtkomst
+Historical bookings are fetched with `includeObsolete=true`; long ranges are split into windows of at most 90 days automatically (the Awaio API rejects more than 92 days).
+
+### Database access
 
 ```bash
-# PostgreSQL-shell
+# PostgreSQL shell
 docker compose exec postgres psql -U awaio_user -d awaio_db
 
-# Manuell backup
+# Manual backup
 docker compose exec -T postgres pg_dump -U awaio_user awaio_db | gzip > manual_backup.sql.gz
 
 # Restore
 gunzip -c manual_backup.sql.gz | docker compose exec -T postgres psql -U awaio_user -d awaio_db
 ```
 
-### Manuell körning av backup/fetch-tasks
+### Running the backup/fetch tasks manually
 
 ```powershell
 .\task_fetch_bookings_windows.ps1
@@ -174,111 +176,109 @@ bash task_backup_windows.sh
 
 ---
 
-## 🔐 Säkerhet & Integritet
+## 🔐 Security & privacy
 
-### Användar-anonymisering (GDPR)
+### User anonymisation (GDPR)
 
-Sätt i `.env`:
+Set in `.env`:
 ```
 ANONYMIZE_USERS=true
-ANONYMIZE_SALT=<din-hemliga-salt>
+ANONYMIZE_SALT=<your-secret-salt>   # openssl rand -hex 32
 ```
 
+- Awaio user ids are replaced by HMAC-SHA256 pseudonyms keyed with the salt
 - Email: `john.doe@company.com` → `user_abc123@anonymous.local`
-- Namn: `John Doe` → `User ABC123`
-- Konsistent: samma `user_id` ger alltid samma anonyma identitet
-- Databas-backat: mappning lagras i `user_anonymization_map`-tabellen
+- Name: `John Doe` → `User ABC123`
+- Consistent: the same `user_id` and salt always give the same pseudonym
+- Never rotate the salt without re-importing all data
 
-Se `CLAUDE.md` → "Privacy & Anonymization" för tekniska detaljer.
+See `CLAUDE.md` → "Privacy & Anonymization" for the technical details.
 
 ### Credentials
 
-Alla hemligheter lagras i `.env` (i globala `.gitignore`). Committa aldrig `.env`. Projekt-credentials finns i Bitwarden (item `dev/awaio`):
-```bash
-bw-env awaio
-```
+All secrets live in `.env`, which is git-ignored. Never commit `.env`, and keep a copy of it (in particular `ANONYMIZE_SALT`) in a password manager.
 
 ---
 
-## 🐛 Felsökning
+## 🐛 Troubleshooting
 
-### Docker Desktop körs inte
+### Docker Desktop is not running
 ```
-ERR Docker Desktop verkar inte köra
+ERR Docker Desktop does not seem to be running
 ```
-→ Starta Docker Desktop, vänta tills valen visas "Running", kör scriptet igen. Aktivera "Start Docker Desktop when you log in" i inställningarna.
+→ Start Docker Desktop, wait until it shows "Running", then run the script again. Enable "Start Docker Desktop when you log in" in the settings.
 
-### Port 5433 eller 3000 upptagen
+### Port 5433 or 3000 in use
 ```
 Error response from daemon: ports are not available
 ```
-→ Hitta processen: `Get-NetTCPConnection -LocalPort 5433` (PowerShell). Stäng av konflikterande process eller ändra portarna i `.env` (`POSTGRES_PORT`, `METABASE_PORT`).
+→ Find the process: `Get-NetTCPConnection -LocalPort 5433` (PowerShell). Stop the conflicting process or change the ports in `.env` (`POSTGRES_PORT`, `METABASE_PORT`).
 
-### PostgreSQL startar inte
+### PostgreSQL does not start
 ```bash
 docker compose logs postgres --tail 100
 docker compose restart postgres
 ```
 
-### Metabase är inte tillgänglig
-- Vänta 2–3 min efter första start (initial DB-migration)
-- `docker compose ps metabase` — healthcheck ska bli `healthy`
+### Metabase is not available
+- Wait 2–3 minutes after the first start (initial DB migration)
+- `docker compose ps metabase` — the healthcheck should become `healthy`
 - `docker compose logs metabase --tail 100`
 
-### Fetcher-tasken kör inte
-- Windows Task Scheduler → hitta "Awaio - Fetch Bookings" → "Last Run Result"
-- Loggfil: `logs/task_scheduler_YYYYMMDD.log`
-- Testa manuellt: `.\task_fetch_bookings_windows.ps1`
+### The scheduler does not fetch
+- `docker compose logs --tail 50 scheduler` — every iteration ends with `Iteration succeeded` or `Iteration failed`
+- Log file: `logs/scheduler.log`
+- Test manually: `.\task_fetch_bookings_windows.ps1`
 
-### Backup misslyckas
-- Loggfil: `logs/backup_YYYYMMDD.log`
-- Kontrollera att `awaio-postgres`-containern körs: `docker ps | grep postgres`
-- Diskutrymme: Docker Desktop → Settings → Resources → Disk
+### Backup fails
+- Log file: `logs/backup_YYYYMMDD.log`
+- Check that the `awaio-postgres` container is running: `docker ps | grep postgres`
+- Disk space: Docker Desktop → Settings → Resources → Disk
 
 ---
 
-## 📁 Filstruktur
+## 📁 File structure
 
 ```
 awaio/
-├── .env.example                         # Template för miljövariabler
-├── docker-compose.yml                   # Docker Compose (enda compose-filen)
-├── Dockerfile                           # (webhook-app)
-├── Dockerfile.fetcher                   # Python-fetcher image
-├── awaio_database_schema_postgres.sql   # Databasschema (init)
-├── init-metabase-db.sh                  # Skapar metabase_app-databasen
-├── fetch_bookings.py                    # Hämta bokningar från Awaio API
-├── fetch_entities.py                    # Hämta entiteter (hierarkisk)
-├── anonymize.py                         # Användaranonymisering
-├── scheduler_loop.py                    # Timvis loop i awaio-scheduler-containern
-├── windows-setup.ps1 / .sh              # Interaktiv setup
-├── task_fetch_bookings_windows.{ps1,sh} # Manuell ad-hoc hämtning
-├── task_backup_windows.{ps1,sh}         # Daglig backup
-├── metabase/                            # SQL-frågor + Metabase-seed
-├── mindsdb/                             # ML-setup (valfritt)
-├── chat_app/                            # Streamlit-chatt (valfritt)
-├── scripts/                             # CI/test-scripts
-├── tests/                               # pytest-tester
-├── logs/                                # Task-loggar (skapas vid första körning)
-└── backups/                             # Databas-backups (skapas av task_backup)
+├── .env.example                         # Template for environment variables
+├── docker-compose.yml                   # Docker Compose (the only compose file)
+├── Dockerfile                           # (webhook app)
+├── Dockerfile.fetcher                   # Python fetcher image
+├── awaio_database_schema_postgres.sql   # Database schema (init)
+├── init-metabase-db.sh                  # Creates the metabase_app database
+├── fetch_bookings.py                    # Fetch bookings from the Awaio API
+├── fetch_entities.py                    # Fetch entities (hierarchical)
+├── anonymize.py                         # User anonymisation
+├── scheduler_loop.py                    # Hourly loop in the awaio-scheduler container
+├── windows-setup.ps1 / .sh              # Interactive setup
+├── task_fetch_bookings_windows.{ps1,sh} # Manual ad hoc fetch
+├── task_backup_windows.{ps1,sh}         # Daily backup
+├── metabase/                            # SQL questions + Metabase models
+├── mindsdb/                             # ML setup (optional)
+├── chat_app/                            # Streamlit chat (optional)
+├── scripts/                             # CI/test scripts
+├── tests/                               # pytest tests
+├── logs/                                # Task logs (created on first run)
+└── backups/                             # Database backups (created by task_backup)
 ```
 
 ---
 
-## 📚 Mer dokumentation
+## 📚 More documentation
 
-- `CLAUDE.md` — utvecklings-guide, API-detaljer, databasarkitektur
-- `README_DOCKER.md` — generisk Docker-referens
-- `MINDSDB_GUIDE.md` / `CLAUDE_MINDSDB_SETUP.md` — ML-setup (valfri)
-- `FETCH_BOOKINGS_IMPROVEMENTS.md` — historik över förbättringar i fetcher
-- `CONTRIBUTING.md` — bidragsriktlinjer
+- `CLAUDE.md` — development guide, API details, database architecture
+- `README_DOCKER.md` — generic Docker reference
+- `MINDSDB_GUIDE.md` / `CLAUDE_MINDSDB_SETUP.md` — ML setup (optional)
+- `FETCH_BOOKINGS_IMPROVEMENTS.md` — history of improvements to the fetcher
+- `CONTRIBUTING.md` — contribution guidelines
 
 ---
 
-**Tips**: Spara regelbundna backups på säker plats (t.ex. molnlagring) utöver den lokala 7-dagars-retentionen.
+**Tip**: Keep regular backups somewhere safe (for example cloud storage) in addition to the local 7-day retention.
 
-## Licens
+## License
 
 Copyright © 2025–2026 Mattias Wahlberg.
 
-Licensierad under [EUPL-1.2](LICENSE) (European Union Public Licence v. 1.2).
+Licensed under the [EUPL-1.2](LICENSE) (European Union Public Licence v. 1.2).

@@ -1,79 +1,81 @@
 # Awaio Docker Environment - Setup Guide
 
-Docker-miljö för Awaio med PostgreSQL, Metabase och Python import-script.
+Docker environment for Awaio with PostgreSQL, Metabase and the Python import scripts.
 
-## Komponenter
+## Components
 
-- **PostgreSQL 16**: Databas för bookings och entities
-- **Metabase**: Visualisering och analys av data
-- **pgAdmin**: Web-baserad databashantering
-- **Python Import Script**: Import av JSON-data till PostgreSQL
+- **PostgreSQL 16**: Database for bookings and entities
+- **Metabase**: Visualisation and analysis of the data
+- **pgAdmin**: Web-based database administration
+- **Python import scripts**: Fetch data from the Awaio API into PostgreSQL
 
-## Snabbstart
+## Quick start
 
-### 1. Förberedelser
+### 1. Preparation
 
-Skapa en `.env` fil baserad på `.env.example`:
+Create a `.env` file based on `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Redigera `.env` och anpassa värdena efter behov.
+Edit `.env` and adjust the values as needed (at least the Awaio credentials and the passwords).
 
-### 2. Starta Docker-miljön
+### 2. Start the Docker environment
 
 ```bash
-# Starta alla services
-docker-compose up -d
+# Start all default services
+docker compose up -d
 
-# Visa logs
-docker-compose logs -f
+# Show logs
+docker compose logs -f
 
-# Kontrollera status
-docker-compose ps
+# Check status
+docker compose ps
 ```
 
-### 3. Verifiera att allt fungerar
+### 3. Check that everything works
 
-- **PostgreSQL**: `localhost:5432`
+- **PostgreSQL**: `localhost:5433`
 - **Metabase**: http://localhost:3000
-- **pgAdmin**: http://localhost:5050
+- **pgAdmin**: http://localhost:5050 (with `--profile admin`)
 
-## Importera JSON-data
+## Importing data
 
-### Installera Python-beroenden
+The scheduler container fetches data every hour. To import manually:
 
 ```bash
-# Skapa virtuell miljö
+# Entities (desks, rooms, lockers and their hierarchy)
+docker compose --profile tools run --rm fetcher python3 fetch_entities.py --stats
+
+# Bookings for a date range
+docker compose --profile tools run --rm fetcher python3 fetch_bookings.py --date 2025-06-01 --days 30 --stats
+```
+
+To run the scripts outside Docker:
+
+```bash
+# Create a virtual environment
 python3 -m venv venv
-source venv/bin/activate  # På Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Installera dependencies
-pip install psycopg2-binary python-dotenv
+# Install dependencies
+pip install -r requirements.txt
+
+python3 fetch_bookings.py --days 1 --stats
 ```
 
-### Kör import-scriptet
-
-```bash
-# Importera bookings från JSON-fil
-python import_bookings.py json/response_1760381039822.json
-
-# Med statistik
-python import_bookings.py json/response_1760381039822.json --stats
-```
-
-## Användning
+## Usage
 
 ### PostgreSQL
 
-**Anslut från lokal dator:**
+**Connect from your own machine:**
 
 ```bash
-psql -h localhost -p 5432 -U awaio_user -d awaio_db
+psql -h localhost -p 5433 -U awaio_user -d awaio_db
 ```
 
-**Anslut från Python:**
+**Connect from Python:**
 
 ```python
 import psycopg2
@@ -84,7 +86,7 @@ load_dotenv()
 
 conn = psycopg2.connect(
     host=os.getenv('POSTGRES_HOST', 'localhost'),
-    port=int(os.getenv('POSTGRES_PORT', 5432)),
+    port=int(os.getenv('POSTGRES_PORT', 5433)),
     database=os.getenv('POSTGRES_DB', 'awaio_db'),
     user=os.getenv('POSTGRES_USER', 'awaio_user'),
     password=os.getenv('POSTGRES_PASSWORD', 'change_me')
@@ -93,58 +95,56 @@ conn = psycopg2.connect(
 
 ### Metabase
 
-1. Öppna http://localhost:3000
-2. Första gången: skapa admin-användare
-3. Lägg till PostgreSQL-databas:
+1. Open http://localhost:3000
+2. First time: create an admin user
+3. Add the PostgreSQL database:
    - **Database type**: PostgreSQL
    - **Host**: postgres
    - **Port**: 5432
    - **Database name**: awaio_db
    - **Username**: awaio_user
-   - **Password**: (från .env)
+   - **Password**: (from .env)
 
 ### pgAdmin
 
-1. Öppna http://localhost:5050
-2. Logga in med credentials från `.env`:
-   - Email: `admin@awaio.local`
-   - Password: `admin`
-3. Lägg till server:
+1. Open http://localhost:5050
+2. Log in with the credentials from `.env` (`PGADMIN_EMAIL` / `PGADMIN_PASSWORD`)
+3. Add a server:
    - **Host**: postgres
    - **Port**: 5432
    - **Username**: awaio_user
-   - **Password**: (från .env)
+   - **Password**: (from .env)
 
-## Databasschema
+## Database schema
 
-Databasen innehåller följande huvudtabeller:
+The database contains these main tables:
 
-- `communities` - Organisationer/communities
-- `users` - Användare
-- `entities` - Bokningsbara resurser (rum, skrivbord, etc.)
-- `bookings` - Bokningar
-- `booking_organizers` - Bokningens organisatörer
-- `booking_participants` - Bokningens deltagare
-- `calendar_events` - Kalenderevents
+- `communities` - Organisations/communities
+- `users` - Users (pseudonymised when `ANONYMIZE_USERS=true`)
+- `entities` - Bookable resources (rooms, desks, etc.)
+- `bookings` - Bookings
+- `booking_organizers` - The booking's organisers
+- `booking_participants` - The booking's participants
+- `calendar_events` - Calendar events
 
-### Användbara queries
+### Useful queries
 
-**Hämta aktiva bokningar:**
+**Get active bookings:**
 ```sql
 SELECT * FROM active_bookings;
 ```
 
-**Hitta lediga resurser:**
+**Find free resources:**
 ```sql
 SELECT * FROM find_available_entities(
-    'OlnrwKaefGc2C2Z9Znzv',  -- community_id
+    'your-community-id',      -- community_id
     '2025-10-15 09:00:00',   -- start_time
     '2025-10-15 17:00:00',   -- end_time
     'desk'                    -- group_tag (optional)
 );
 ```
 
-**Kontrollera bokningskonflikter:**
+**Check booking conflicts:**
 ```sql
 SELECT * FROM check_booking_conflicts(
     'example-desk-1',  -- entity_id
@@ -154,112 +154,112 @@ SELECT * FROM check_booking_conflicts(
 );
 ```
 
-## Import Script Features
+## Import script features
 
-`import_bookings.py` scriptet hanterar automatiskt:
+`fetch_bookings.py` automatically:
 
-- Skapar communities, users, entities om de inte finns
-- Importerar bookings med alla relaterade data
-- Hanterar organizers och participants
-- Undviker duplikater med UPSERT
-- Visar progress under import
-- Visar statistik efter import
+- Creates communities, users and calendar events if they do not exist
+- Fetches missing entities via `fetch_entities.py`
+- Imports bookings with all related data
+- Handles organizers and participants
+- Avoids duplicates with UPSERT
+- Shows a summary and statistics after the import (`--verbose` for per-booking detail)
 
-## Hantera Docker-miljön
+## Managing the Docker environment
 
 ```bash
-# Stoppa alla services
-docker-compose down
+# Stop all services
+docker compose down
 
-# Stoppa och ta bort volumes (VARNING: raderar all data!)
-docker-compose down -v
+# Stop and remove volumes (WARNING: deletes all data!)
+docker compose down -v
 
-# Starta om en specifik service
-docker-compose restart postgres
+# Restart a specific service
+docker compose restart postgres
 
-# Se logs för en specifik service
-docker-compose logs -f postgres
+# Logs for a specific service
+docker compose logs -f postgres
 
-# Öppna shell i container
-docker-compose exec postgres psql -U awaio_user -d awaio_db
+# Open a shell in the container
+docker compose exec postgres psql -U awaio_user -d awaio_db
 ```
 
-## Backup och Restore
+## Backup and restore
 
 ### Backup
 
 ```bash
-# Backup av hela databasen
-docker-compose exec postgres pg_dump -U awaio_user awaio_db > backup.sql
+# Back up the whole database
+docker compose exec postgres pg_dump -U awaio_user awaio_db > backup.sql
 
-# Backup med datum
-docker-compose exec postgres pg_dump -U awaio_user awaio_db > backup_$(date +%Y%m%d_%H%M%S).sql
+# Backup with a timestamp
+docker compose exec postgres pg_dump -U awaio_user awaio_db > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ### Restore
 
 ```bash
-# Restore från backup
-docker-compose exec -T postgres psql -U awaio_user awaio_db < backup.sql
+# Restore from a backup
+docker compose exec -T postgres psql -U awaio_user awaio_db < backup.sql
 ```
 
-## Felsökning
+## Troubleshooting
 
-### PostgreSQL startar inte
+### PostgreSQL does not start
 
 ```bash
-# Kontrollera logs
-docker-compose logs postgres
+# Check the logs
+docker compose logs postgres
 
-# Kontrollera att port 5432 inte används
-lsof -i :5432  # På macOS/Linux
-netstat -ano | findstr :5432  # På Windows
+# Check that port 5433 is not in use
+lsof -i :5433  # On macOS/Linux
+netstat -ano | findstr :5433  # On Windows
 ```
 
-### Kan inte ansluta till databasen
+### Cannot connect to the database
 
-1. Kontrollera att containern körs: `docker-compose ps`
-2. Kontrollera credentials i `.env`
-3. Om du ansluter inifrån Docker-nätverket, använd hostname `postgres` istället för `localhost`
+1. Check that the container is running: `docker compose ps`
+2. Check the credentials in `.env`
+3. If you connect from inside the Docker network, use the hostname `postgres` instead of `localhost`
 
-### Import-script misslyckas
+### The import script fails
 
 ```bash
-# Kontrollera att Python-beroenden är installerade
+# Check that the Python dependencies are installed
 pip list | grep psycopg2
 
-# Kontrollera att .env filen finns och innehåller rätt värden
+# Check that the .env file exists and has the right values
 cat .env
 
-# Testa databasanslutningen
-python -c "import psycopg2; from dotenv import load_dotenv; import os; load_dotenv(); print(psycopg2.connect(host='localhost', database='awaio_db', user='awaio_user', password=os.getenv('POSTGRES_PASSWORD')))"
+# Test the database connection
+python -c "import psycopg2; from dotenv import load_dotenv; import os; load_dotenv(); print(psycopg2.connect(host='localhost', port=5433, database='awaio_db', user='awaio_user', password=os.getenv('POSTGRES_PASSWORD')))"
 ```
 
-## Produktionsdrift
+## Production use
 
-För produktionsmiljö, överväg följande:
+For a production environment, consider the following:
 
-1. **Säkerhet:**
-   - Använd starka lösenord
-   - Aktivera SSL för databasanslutningar
-   - Använd secrets management (t.ex. Docker secrets)
-   - Begränsa nätverksåtkomst
+1. **Security:**
+   - Use strong passwords
+   - Enable SSL for database connections
+   - Use secrets management (e.g. Docker secrets)
+   - Restrict network access (bind ports to `127.0.0.1` unless they must be reachable)
 
 2. **Backup:**
-   - Automatisera backups med cron
-   - Lagra backups på annan plats
-   - Testa restore-procedur regelbundet
+   - Automate backups with cron or Task Scheduler
+   - Store backups somewhere else
+   - Test the restore procedure regularly
 
 3. **Monitoring:**
-   - Sätt upp monitoring av databas och services
-   - Logga och övervaka felmeddelanden
-   - Sätt upp alerts för viktiga events
+   - Set up monitoring of the database and services
+   - Log and monitor error messages
+   - Set up alerts for important events
 
 4. **Performance:**
-   - Justera PostgreSQL konfiguration för produktionslast
-   - Överväg connection pooling (t.ex. PgBouncer)
-   - Indexera tabeller baserat på användningsmönster
+   - Tune the PostgreSQL configuration for production load
+   - Consider connection pooling (e.g. PgBouncer)
+   - Index tables based on usage patterns
 
-## Licens
+## License
 
-Anpassa efter ditt projekts licens.
+EUPL-1.2 — see [LICENSE](LICENSE).

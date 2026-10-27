@@ -1,2 +1,2 @@
--- Visa alla databaser (du ska se awaio_postgres i listan)
+-- Show all databases (you should see awaio_postgres in the list)
 SHOW DATABASES

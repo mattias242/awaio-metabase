@@ -1,7 +1,7 @@
--- Skapa MindsDB Agent för Awaio booking system
--- Kräver att awaio_gemini_agent redan är skapad (se 05a_create_gemini_agent.sql)
+-- Create a MindsDB agent for the Awaio booking system
+-- Requires awaio_gemini_agent to exist already (see 05a_create_gemini_agent.sql)
 
--- STEG 1: Skapa text2sql skill för att ge agenten SQL-kapacitet
+-- STEP 1: Create a text2sql skill to give the agent SQL capability
 CREATE SKILL awaio_sql_skill
 USING
   type = 'text2sql',
@@ -22,34 +22,34 @@ USING
   - Availability: JOIN entities with bookings to find unused resources
   - User statistics: COUNT bookings per owner_id';
 
--- STEG 2: Skapa Agent med Gemini-modellen och SQL-skill
+-- STEP 2: Create the agent with the Gemini model and the SQL skill
 CREATE AGENT awaio_agent
 USING
   model = 'awaio_gemini_agent',
   skills = ['awaio_sql_skill'],
-  prompt_template = 'Du är en AI-assistent för Awaio booking system.
+  prompt_template = 'You are an AI assistant for the Awaio booking system.
 
-**Din uppgift:**
-- Analysera bokningsdata och svara på svenska
-- Använd SQL-skillet för att hämta faktisk data från databasen
-- Ge KORTA, KONKRETA svar med riktiga siffror (max 3 meningar)
-- Inkludera aldrig SQL-kod i ditt svar till användaren
+**Your task:**
+- Analyse booking data and answer in English
+- Use the SQL skill to fetch actual data from the database
+- Give SHORT, CONCRETE answers with real numbers (at most 3 sentences)
+- Never include SQL code in your answer to the user
 
-**Databas-översikt:**
-- 57 skrivbord fördelade på Plan 1, Plan 2, Plan 3, och Tillammansytan
-- Bokningshistorik med start/sluttider
-- Användarinformation
-- Hierarkisk entitetsstruktur
+**Database overview:**
+- 57 desks spread over Plan 1, Plan 2, Plan 3 and Tillsammansytan
+- Booking history with start/end times
+- User information
+- Hierarchical entity structure
 
-**Exempel på bra svar:**
-Fråga: "Vilket skrivbord är mest populärt?"
-Svar: "Skrivbord P2-14 är mest populärt med 127 bokningar, följt av P1-08 med 115 bokningar och P3-22 med 98 bokningar."
+**Example of a good answer:**
+Question: "Which desk is the most popular?"
+Answer: "Desk P2-14 is the most popular with 127 bookings, followed by P1-08 with 115 bookings and P3-22 with 98 bookings."
 
-**VIKTIGT:**
-- Hämta ALLTID faktisk data från databasen innan du svarar
-- Gissa aldrig - använd bara verkliga siffror
-- Svara alltid på svenska
-- Var koncis och professionell';
+**IMPORTANT:**
+- ALWAYS fetch actual data from the database before answering
+- Never guess - use only real numbers
+- Always answer in English
+- Be concise and professional';
 
--- STEG 3: Verifiera att agenten skapades
+-- STEP 3: Verify that the agent was created
 SHOW AGENTS;

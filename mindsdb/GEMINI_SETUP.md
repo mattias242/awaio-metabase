@@ -1,28 +1,28 @@
-# Google Gemini AI Agent Setup för Awaio
+# Google Gemini AI Agent Setup for Awaio
 
-## Steg 1: Skaffa Gemini API Key
+## Step 1: Get a Gemini API key
 
-1. Gå till: **https://aistudio.google.com/app/apikey**
-2. Logga in med ditt Google-konto
-3. Klicka "Create API Key"
-4. Kopiera din API key (börjar med `AIza...`)
+1. Go to: **https://aistudio.google.com/app/apikey**
+2. Log in with your Google account
+3. Click "Create API Key"
+4. Copy your API key (starts with `AIza...`)
 
-## Steg 2: Skapa ML Engine i MindsDB
+## Step 2: Create the ML engine in MindsDB
 
-Öppna MindsDB Web UI (http://localhost:47334) och kör:
+Open the MindsDB Web UI (http://localhost:47334) and run:
 
 ```sql
 CREATE ML_ENGINE gemini_engine
 FROM google_gemini
 USING
-  google_gemini_api_key = 'AIza...DIN-API-KEY-HÄR';
+  google_gemini_api_key = 'AIza...YOUR-API-KEY-HERE';
 ```
 
-**Förväntat resultat:** "Query successfully completed"
+**Expected result:** "Query successfully completed"
 
-## Steg 3: Skapa Chat-Agenten
+## Step 3: Create the chat agent
 
-Kör [05a_create_gemini_agent.sql](05a_create_gemini_agent.sql) eller kör denna SQL:
+Run [05a_create_gemini_agent.sql](05a_create_gemini_agent.sql) or this SQL:
 
 ```sql
 CREATE MODEL awaio_gemini_agent
@@ -30,44 +30,44 @@ PREDICT answer
 USING
   engine = 'gemini_engine',
   model_name = 'gemini-2.5-flash',
-  prompt_template = 'Du är en hjälpsam assistent som analyserar bokningsdata.
+  prompt_template = 'You are a helpful assistant that analyses booking data.
 
-  Användaren frågar: {{question}}
+  The user asks: {{question}}
 
-  Svara ALLTID på svenska och var konkret.';
+  ALWAYS answer in English and be concrete.';
 ```
 
-**OBS:** Detta tar 10-30 sekunder första gången.
+**NOTE:** this takes 10-30 seconds the first time.
 
-## Steg 4: Testa Agenten
+## Step 4: Test the agent
 
-### Enkel fråga
+### Simple question
 ```sql
 SELECT answer
 FROM awaio_gemini_agent
-WHERE question = 'Vilken veckodag har flest bokningar?'
+WHERE question = 'Which weekday has the most bookings?'
 ```
 
-### Flera frågor samtidigt
+### Several questions at once
 ```sql
 SELECT
   t.question,
   m.answer
 FROM (
-  SELECT 'Hur många bokningar har vi totalt?' AS question
+  SELECT 'How many bookings do we have in total?' AS question
   UNION ALL
-  SELECT 'Vilket skrivbord är mest populärt?'
+  SELECT 'Which desk is the most popular?'
   UNION ALL
-  SELECT 'Vilka dagar har minst aktivitet?'
+  SELECT 'Which days have the least activity?'
 ) AS t
 JOIN awaio_gemini_agent AS m
 ```
 
-### Fråga med faktisk statistik
+### Question with actual statistics
 ```sql
 SELECT
-  'Totalt: ' || stats.total_bookings || ' bokningar' AS statistik,
-  m.answer AS ai_analys
+  'Total: ' || stats.total_bookings || ' bookings' AS statistics,
+  m.answer AS ai_analysis
 FROM awaio_gemini_agent AS m
 JOIN (
   SELECT
@@ -77,155 +77,155 @@ JOIN (
   FROM awaio_postgres.bookings
 ) AS stats
 WHERE m.question = CONCAT(
-  'Vi har totalt ',
+  'We have a total of ',
   CAST(stats.total_bookings AS VARCHAR),
-  ' bokningar från ',
+  ' bookings from ',
   CAST(stats.unique_users AS VARCHAR),
-  ' unika användare över ',
+  ' unique users across ',
   CAST(stats.unique_resources AS VARCHAR),
-  ' olika resurser. Analysera detta och ge rekommendationer.'
+  ' different resources. Analyse this and give recommendations.'
 )
 ```
 
-## Steg 5: Avancerade Use Cases
+## Step 5: Advanced use cases
 
-### A. Veckorapport
+### A. Weekly report
 ```sql
-SELECT m.answer AS veckorapport
+SELECT m.answer AS weekly_report
 FROM awaio_gemini_agent AS m
-WHERE m.question = 'Skapa en kort sammanfattning av veckans bokningar och trender'
+WHERE m.question = 'Write a short summary of this week''s bookings and trends'
 ```
 
-### B. Underutnyttjade Resurser
+### B. Under-used resources
 ```sql
 SELECT
-  e.name AS resurs,
-  COUNT(b.id) AS antal_bokningar,
-  m.answer AS rekommendation
+  e.name AS resource,
+  COUNT(b.id) AS bookings,
+  m.answer AS recommendation
 FROM awaio_postgres.entities e
 LEFT JOIN awaio_postgres.bookings b ON e.id = b.entity_id
 JOIN awaio_gemini_agent m
 WHERE e.group_tag = 'desk'
   AND m.question = CONCAT(
-    'Resursen "', e.name, '" har endast ',
+    'The resource "', e.name, '" has only ',
     CAST(COUNT(b.id) AS VARCHAR),
-    ' bokningar. Ge rekommendationer för hur vi kan öka utnyttjandet.'
+    ' bookings. Give recommendations for how we can increase its use.'
   )
 GROUP BY e.name
 HAVING COUNT(b.id) < 10
 ```
 
-### C. Trend-Analys
+### C. Trend analysis
 ```sql
-SELECT m.answer AS trendanalys
+SELECT m.answer AS trend_analysis
 FROM awaio_gemini_agent m
 JOIN (
   SELECT
-    EXTRACT(DOW FROM start_time) as veckodag,
-    COUNT(*) as antal
+    EXTRACT(DOW FROM start_time) as weekday,
+    COUNT(*) as bookings
   FROM awaio_postgres.bookings
   WHERE start_time >= NOW() - INTERVAL '30 days'
-  GROUP BY veckodag
-  ORDER BY veckodag
+  GROUP BY weekday
+  ORDER BY weekday
 ) trends
-WHERE m.question = 'Analysera bokningsmönster per veckodag och identifiera trender'
+WHERE m.question = 'Analyse the booking patterns per weekday and identify trends'
 ```
 
-## Integration med Metabase
+## Integration with Metabase
 
-Skapa "Native Query" widgets i Metabase:
+Create "Native Query" widgets in Metabase:
 
-### Widget 1: AI Insights
+### Widget 1: AI insights
 ```sql
-SELECT answer AS "AI Analys"
+SELECT answer AS "AI Analysis"
 FROM awaio_gemini_agent
-WHERE question = 'Sammanfatta de viktigaste insikterna från bokningsdata'
+WHERE question = 'Summarise the most important insights from the booking data'
 ```
 
-### Widget 2: Rekommendationer
+### Widget 2: Recommendations
 ```sql
-SELECT answer AS "Rekommendationer"
+SELECT answer AS "Recommendations"
 FROM awaio_gemini_agent
-WHERE question = 'Ge 3 konkreta rekommendationer för att förbättra resursutnyttjandet'
+WHERE question = 'Give 3 concrete recommendations for improving resource utilisation'
 ```
 
-## Gemini-Specifika Fördelar
+## Gemini-specific benefits
 
-✅ **Gratis tier** - 60 requests/minut
-✅ **Multimodal** - Kan hantera text, bilder, och mer
-✅ **Snabb** - Ofta snabbare än GPT-4
-✅ **Långa kontext** - Upp till 1M tokens (Gemini 1.5 Pro)
-✅ **Svenskt språk** - Bra stöd för svenska
+✅ **Free tier** - 60 requests/minute
+✅ **Multimodal** - can handle text, images and more
+✅ **Fast** - often faster than GPT-4
+✅ **Long context** - up to 1M tokens (Gemini 1.5 Pro)
+✅ **Multilingual** - good support for many languages, including Swedish
 
-## Modellval
+## Choosing a model
 
-MindsDB stödjer olika Gemini-modeller (2025):
+MindsDB supports several Gemini models (2025):
 
 ```sql
--- Gemini 2.5 Flash (Rekommenderad - snabb och modern)
+-- Gemini 2.5 Flash (recommended - fast and modern)
 model_name = 'gemini-2.5-flash'
 
--- Gemini 2.5 Pro (Längre kontext och mer avancerad)
+-- Gemini 2.5 Pro (longer context and more advanced)
 model_name = 'gemini-2.5-pro'
 
--- Gemini 2.0 Flash (Äldre version)
+-- Gemini 2.0 Flash (older version)
 model_name = 'gemini-2.0-flash'
 ```
 
-**OBS:** Äldre modeller som `gemini-pro` och `gemini-1.5-pro` är föråldrade sedan 2025.
+**NOTE:** older models such as `gemini-pro` and `gemini-1.5-pro` have been deprecated since 2025.
 
 ## Troubleshooting
 
 ### "ML_ENGINE not found"
-**Problem:** Gemini engine inte skapad
-**Lösning:** Kör CREATE ML_ENGINE först
+**Problem:** the Gemini engine has not been created
+**Solution:** run CREATE ML_ENGINE first
 
 ### "Invalid API key"
-**Problem:** Fel API key eller inte aktiverad
-**Lösning:**
-1. Kontrollera key från https://aistudio.google.com/app/apikey
-2. Säkerställ att Gemini API är aktiverat för ditt projekt
+**Problem:** wrong API key or not activated
+**Solution:**
+1. Check the key at https://aistudio.google.com/app/apikey
+2. Make sure the Gemini API is enabled for your project
 
 ### "Rate limit exceeded"
-**Problem:** För många requests
-**Lösning:** Vänta 1 minut eller uppgradera till betald plan
+**Problem:** too many requests
+**Solution:** wait 1 minute or upgrade to a paid plan
 
-### Svar på engelska
-**Problem:** Gemini svarar på engelska trots prompt
-**Lösning:** Lägg till "Svara UTESLUTANDE på svenska" i början av prompt_template
+### Answers in the wrong language
+**Problem:** Gemini answers in another language despite the prompt
+**Solution:** add "Answer ONLY in English" at the start of the prompt_template
 
-### Långsamma svar
-**Problem:** Tar lång tid att få svar
-**Lösning:**
-- Använd kortare prompts
-- Begränsa datamängd i JOIN
-- Överväg caching av vanliga frågor
+### Slow answers
+**Problem:** it takes a long time to get an answer
+**Solution:**
+- Use shorter prompts
+- Limit the amount of data in the JOIN
+- Consider caching common questions
 
-## Kostnader
+## Costs
 
-Gemini har en generös **gratis tier**:
+Gemini has a generous **free tier**:
 
-- **Gemini Pro**: 60 requests/minut gratis
-- **Gemini 1.5 Pro**: 2 requests/minut gratis
-- **Gemini 1.5 Flash**: 15 requests/minut gratis
+- **Gemini Pro**: 60 requests/minute free
+- **Gemini 1.5 Pro**: 2 requests/minute free
+- **Gemini 1.5 Flash**: 15 requests/minute free
 
-För production, se: https://ai.google.dev/pricing
+For production, see: https://ai.google.dev/pricing
 
-## Säkerhet
+## Security
 
-⚠️ **Viktigt:**
-- Exponera ALDRIG API keys i version control
-- Använd miljövariabler för API keys
-- Begränsa API key till specifika IP-adresser om möjligt
-- Logga aldrig känslig användardata i prompts
+⚠️ **Important:**
+- NEVER expose API keys in version control
+- Use environment variables for API keys
+- Restrict the API key to specific IP addresses if possible
+- Never log sensitive user data in prompts
 
-## Nästa Steg
+## Next steps
 
-1. ✅ Skaffa Gemini API key
-2. ✅ Skapa ML_ENGINE i MindsDB
-3. ✅ Skapa awaio_gemini_agent modell
-4. ✅ Testa med enkla frågor
-5. ✅ Integrera i Metabase dashboards
-6. ✅ Bygg custom chat-interface (optional)
+1. ✅ Get a Gemini API key
+2. ✅ Create the ML_ENGINE in MindsDB
+3. ✅ Create the awaio_gemini_agent model
+4. ✅ Test with simple questions
+5. ✅ Integrate into Metabase dashboards
+6. ✅ Build a custom chat interface (optional)
 
-**Lycka till med din AI-agent! 🚀**
+**Good luck with your AI agent! 🚀**

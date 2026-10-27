@@ -1,89 +1,89 @@
-# Guide: Skapa Grouped Bar Chart i Metabase
+# Guide: Creating a Grouped Bar Chart in Metabase
 
-## Översikt
+## Overview
 
-Denna guide visar hur du skapar ett stapeldiagram med flera serier (grouped bar chart) i Metabase för att jämföra bokningar mellan olika perioder.
+This guide shows how to create a bar chart with several series (a grouped bar chart) in Metabase to compare bookings between different periods.
 
-## Exempel: Veckodag-jämförelse (fråga 09)
+## Example: weekday comparison (question 09)
 
-### Steg 1: Kör SQL-frågan
+### Step 1: Run the SQL question
 
-1. Öppna Metabase: http://localhost:3000
-2. Klicka **"New"** → **"SQL query"**
-3. Välj database: **"awaio_db"**
-4. Kopiera innehållet från `09_veckodag_jamforelse_4veckor.sql`
-5. Klicka **"Run"**
+1. Open Metabase: http://localhost:3000
+2. Click **"New"** → **"SQL query"**
+3. Choose the database: **"awaio_db"**
+4. Copy the contents of `09_weekday_comparison_4weeks.sql`
+5. Click **"Run"**
 
-Du bör se data som:
+You should see data like:
 ```
-Veckodag | Senaste 4 veckorna | Föregående 4 veckor | Förändring %
----------|--------------------|--------------------|-------------
-1-Måndag |        189         |        273         |    -30.8
-2-Tisdag |        229         |        322         |    -28.9
+Weekday    | Last 4 weeks | Previous 4 weeks | Change %
+-----------|--------------|------------------|---------
+1-Monday   |     189      |       273        |  -30.8
+2-Tuesday  |     229      |       322        |  -28.9
 ...
 ```
 
-### Steg 2: Välj visualisering
+### Step 2: Choose a visualisation
 
-1. Klicka på **"Visualization"**-knappen (bredvid Run)
-2. Välj **"Bar"** (stapeldiagram)
+1. Click the **"Visualization"** button (next to Run)
+2. Choose **"Bar"**
 
-### Steg 3: Konfigurera diagrammet
+### Step 3: Configure the chart
 
-I visualiseringsinställningarna:
+In the visualisation settings:
 
-#### Data-flik:
-- **X-axis**: `Veckodag`
+#### Data tab:
+- **X-axis**: `Weekday`
 - **Y-axis**:
-  - ✅ `Senaste 4 veckorna`
-  - ✅ `Föregående 4 veckor`
-  - ❌ `Förändring %` (valfritt att ta med)
+  - ✅ `Last 4 weeks`
+  - ✅ `Previous 4 weeks`
+  - ❌ `Change %` (optional)
 
-#### Display-flik:
-- **Chart type**: Column chart (vertikala staplar)
-- **Stacking**: **"None"** eller **"Side by side"** (viktigt!)
-  - **INTE** "Stacked" - då läggs serierna ovanpå varandra
-- **Show values on data points**: Valfritt (kan bli plottrigt)
+#### Display tab:
+- **Chart type**: Column chart (vertical bars)
+- **Stacking**: **"None"** or **"Side by side"** (important!)
+  - **NOT** "Stacked" - that puts the series on top of each other
+- **Show values on data points**: optional (can get cluttered)
 
-#### Formatting-flik:
+#### Formatting tab:
 - **Colors**:
-  - Serie 1 (Senaste 4 veckorna): Blå eller grön
-  - Serie 2 (Föregående 4 veckor): Grå eller orange
-- **Legend**: Visa legend för att förklara serierna
+  - Series 1 (Last 4 weeks): blue or green
+  - Series 2 (Previous 4 weeks): grey or orange
+- **Legend**: show the legend to explain the series
 
-#### Axes-flik:
-- **Y-axis label**: "Antal bokningar"
-- **X-axis label**: "Veckodag" (eller lämna tom)
-- **Y-axis scale**: Auto (eller manuell om önskat)
+#### Axes tab:
+- **Y-axis label**: "Number of bookings"
+- **X-axis label**: "Weekday" (or leave empty)
+- **Y-axis scale**: Auto (or manual if you prefer)
 
-### Steg 4: Spara frågan
+### Step 4: Save the question
 
-1. Klicka **"Save"**
-2. Namn: "Veckodag-jämförelse (4 veckor)"
-3. Description: "Jämför bokningar per veckodag mellan senaste 4 veckorna och tidigare 4 veckor"
-4. Collection: Välj eller skapa "Awaio Analytics"
+1. Click **"Save"**
+2. Name: "Weekday comparison (4 weeks)"
+3. Description: "Compares bookings per weekday between the last 4 weeks and the previous 4 weeks"
+4. Collection: choose or create "Awaio Analytics"
 
-### Steg 5: Lägg till i Dashboard
+### Step 5: Add it to a dashboard
 
-1. Gå till din dashboard eller skapa ny
-2. Klicka **"Add a question"**
-3. Välj "Veckodag-jämförelse (4 veckor)"
-4. Justera storlek (rekommenderat: full width eller halv)
-5. Klicka **"Save"**
+1. Go to your dashboard or create a new one
+2. Click **"Add a question"**
+3. Choose "Weekday comparison (4 weeks)"
+4. Adjust the size (recommended: full or half width)
+5. Click **"Save"**
 
-## Resultat
+## Result
 
-Du får ett stapeldiagram som visar:
-- **X-axeln**: Veckodagar (Måndag-Söndag)
-- **Y-axeln**: Antal bokningar
-- **Blå staplar**: Senaste 4 veckorna
-- **Grå staplar**: Föregående 4 veckor
-- **Bredvid varandra**: Lätt att jämföra direkt
+You get a bar chart that shows:
+- **X-axis**: weekdays (Monday-Sunday)
+- **Y-axis**: number of bookings
+- **Blue bars**: last 4 weeks
+- **Grey bars**: previous 4 weeks
+- **Side by side**: easy to compare directly
 
-## Exempel på visuellt resultat
+## Example of the visual result
 
 ```
-Antal bokningar
+Number of bookings
 │
 300│     ▓▓▓
    │     ▓▓▓
@@ -98,89 +98,89 @@ Antal bokningar
  50│ ▓▓░░▓▓▓░▓▓░░▓▓░░▒▒░░
    │ ▓▓░░▓▓▓░▓▓░░▓▓░░▒▒░░
   0└─────────────────────────
-     Mån Tis Ons Tor Fre
+     Mon Tue Wed Thu Fri
 
-▓▓ = Senaste 4 veckorna
-░░ = Föregående 4 veckor
+▓▓ = Last 4 weeks
+░░ = Previous 4 weeks
 ```
 
-## Tips och tricks
+## Tips and tricks
 
-### 1. Färgkodning
-Använd konsekvent färgschema:
-- **Blå/Grön**: Aktuell period (senaste data)
-- **Grå/Orange**: Jämförelseperiod (äldre data)
+### 1. Colour coding
+Use a consistent colour scheme:
+- **Blue/Green**: current period (latest data)
+- **Grey/Orange**: comparison period (older data)
 
 ### 2. Tooltip
-Håll muspekaren över staplar för att se exakta siffror
+Hover over the bars to see the exact numbers
 
-### 3. Förändring %
-Du kan välja att visa "Förändring %" som en tredje serie, men det kan bli plottrigt. Bättre att:
-- Visa förändring % i en separat tabell under diagrammet
-- Eller skapa en egen Line chart för trender
+### 3. Change %
+You can show "Change %" as a third series, but it can get cluttered. Better to:
+- Show the change % in a separate table below the chart
+- Or create a separate line chart for trends
 
 ### 4. Auto-refresh
-För dashboard med denna widget:
-- Sätt auto-refresh till 1 timme eller längre
-- Data ändras bara en gång per dag (nattliga batch-jobb)
+For a dashboard with this widget:
+- Set auto-refresh to 1 hour or longer
+- The data changes at most once per hour (scheduler runs)
 
-### 5. Filtrera bort helger (valfritt)
-Om du bara vill se vardagar, lägg till i SQL:
+### 5. Filter out weekends (optional)
+If you only want to see weekdays, add to the SQL:
 ```sql
-WHERE wd.dow BETWEEN 1 AND 5  -- Måndag-Fredag
+WHERE wd.dow BETWEEN 1 AND 5  -- Monday-Friday
 ```
 
-## Felsökning
+## Troubleshooting
 
-### Problem: Serierna staplas ovanpå varandra
-**Lösning**: Ändra "Stacking" till "None" eller "Side by side" i Display-inställningar
+### Problem: the series are stacked on top of each other
+**Solution**: change "Stacking" to "None" or "Side by side" in the Display settings
 
-### Problem: Bara en serie visas
-**Lösning**: Kontrollera att båda kolumnerna är valda i Y-axis i Data-inställningar
+### Problem: only one series is shown
+**Solution**: check that both columns are selected under Y-axis in the Data settings
 
-### Problem: Fel ordning på veckodagar
-**Lösning**: SQL-frågan har ORDER BY wd.dow vilket sorterar korrekt (Söndag=0, Måndag=1, etc.)
+### Problem: the weekdays are in the wrong order
+**Solution**: the SQL question has ORDER BY wd.dow, which sorts correctly (Sunday=0, Monday=1, etc.)
 
-### Problem: Tomma staplar för vissa dagar
-**Lösning**: Det är korrekt - betyder 0 bokningar den dagen. COALESCE i SQL säkerställer att 0 visas istället för NULL.
+### Problem: empty bars for some days
+**Solution**: that is correct - it means 0 bookings that day. COALESCE in the SQL makes sure 0 is shown instead of NULL.
 
-## Avancerade alternativ
+## Advanced options
 
-### Variant 1: Visa förändring som linje
-Lägg till en Line chart overlay för "Förändring %":
-1. Duplicera frågan
-2. Välj bara "Veckodag" och "Förändring %"
-3. Välj Line chart
-4. Placera ovanpå stapeldiagrammet i dashboard
+### Variant 1: show the change as a line
+Add a line chart overlay for "Change %":
+1. Duplicate the question
+2. Select only "Weekday" and "Change %"
+3. Choose Line chart
+4. Place it on top of the bar chart in the dashboard
 
-### Variant 2: Jämför flera perioder
-Modifiera SQL för att jämföra 3 perioder:
-- Senaste 4 veckor
-- Veckor 5-8
-- Veckor 9-12
+### Variant 2: compare several periods
+Modify the SQL to compare 3 periods:
+- Last 4 weeks
+- Weeks 5-8
+- Weeks 9-12
 
-### Variant 3: Månatlig jämförelse
-Ändra SQL till att jämföra senaste månaden vs föregående månad:
+### Variant 3: monthly comparison
+Change the SQL to compare the last month vs the previous month:
 ```sql
 WHERE start_time >= DATE_TRUNC('month', NOW()) - INTERVAL '1 month'
 ```
 
-## Ytterligare frågor med Grouped Bar Charts
+## More questions with grouped bar charts
 
-Andra användbara jämförelser:
+Other useful comparisons:
 
-1. **Skrivbord vs Rum per veckodag**
-   - Serie 1: Skrivbordsbokningar
-   - Serie 2: Rumsbokningar
+1. **Desks vs rooms per weekday**
+   - Series 1: desk bookings
+   - Series 2: room bookings
 
 2. **Plan 1 vs Plan 2 vs Plan 3**
-   - Jämför bokningar per våning
+   - Compare bookings per floor
 
-3. **Timme på dagen (morgon vs eftermiddag)**
-   - Serie 1: 06:00-12:00
-   - Serie 2: 12:00-18:00
+3. **Hour of the day (morning vs afternoon)**
+   - Series 1: 06:00-12:00
+   - Series 2: 12:00-18:00
 
-4. **Månad-för-månad jämförelse**
-   - De senaste 12 månaderna vs samma månader förra året
+4. **Month-over-month comparison**
+   - The last 12 months vs the same months last year
 
-Se Metabase dokumentation för fler alternativ: https://www.metabase.com/docs/latest/questions/query-builder/visualizations/bar-charts
+See the Metabase documentation for more options: https://www.metabase.com/docs/latest/questions/query-builder/visualizations/bar-charts

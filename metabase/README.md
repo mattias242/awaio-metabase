@@ -1,157 +1,157 @@
-# Metabase Dashboard-frågor för Awaio
+# Metabase dashboard questions for Awaio
 
-Denna mapp innehåller SQL-frågor för att skapa dashboards i Metabase.
+This folder contains SQL questions for building dashboards in Metabase.
 
 ## Models
 
-Undermappen `models/` innehåller Metabase Models — kurerade datakällor som
-de flesta frågor bygger på istället för att joina råa tabeller själva. En
-fil per model:
+The `models/` subfolder contains Metabase Models — curated data sources that
+most questions build on instead of joining the raw tables themselves. One
+file per model:
 
-| Fil | Model | Syfte |
+| File | Model | Purpose |
 |---|---|---|
-| `models/01_entities_with_hierarchy.sql` | Entities With Hierarchy | Plattar ut `entities`-trädet så `floor_name` och `area_name` är vanliga kolumner. |
-| `models/02_bookings_enriched.sql` | Bookings Enriched | Flat fakttabell: bokning + entity + user + duration + weekday + floor/area. Driver ~80 % av dashboard-frågor. |
-| `models/03_daily_entity_metrics.sql` | Daily Entity Metrics | Förberedd per-dygn-per-entity-aggregering för trendfrågor. |
-| `models/04_user_weekly_mobility.sql` | User Weekly Mobility | Per vecka + användare: unika entiteter/skrivbord/rum/våningar, discovery-score. |
-| `models/05_entity_sharing_metrics.sql` | Entity Sharing Metrics | Per entity: unika användare, dominans-ratio (top_user_share) för "demokrati"-dashboards. |
+| `models/01_entities_with_hierarchy.sql` | Entities With Hierarchy | Flattens the `entities` tree so `floor_name` and `area_name` are plain columns. |
+| `models/02_bookings_enriched.sql` | Bookings Enriched | Flat fact table: booking + entity + user + duration + weekday + floor/area. Drives ~80 % of the dashboard questions. |
+| `models/03_daily_entity_metrics.sql` | Daily Entity Metrics | Pre-built per-day, per-entity aggregation for trend questions. |
+| `models/04_user_weekly_mobility.sql` | User Weekly Mobility | Per week + user: unique entities/desks/rooms/floors, discovery score. |
+| `models/05_entity_sharing_metrics.sql` | Entity Sharing Metrics | Per entity: unique users, dominance ratio (top_user_share) for "democracy" dashboards. |
 
-### Så skapar/uppdaterar du modellerna
+### Creating/updating the models
 
 ```bash
 python3 scripts/create_metabase_models.py
 ```
 
-Scriptet kräver `METABASE_API_KEY` i `.env` (skapas i **Admin settings →
-Authentication → API Keys**). Det är idempotent — körs det igen uppdateras
-befintliga modeller med senaste SQL istället för att duplicera.
+The script needs `METABASE_API_KEY` in `.env` (created under **Admin settings →
+Authentication → API Keys**). It is idempotent — running it again updates the
+existing models with the latest SQL instead of creating duplicates.
 
 
 
-## Översikt
+## Overview
 
-| Fråga | Beskrivning | Visualisering |
+| Question | Description | Visualisation |
 |-------|-------------|---------------|
-| 01_bokningar_per_veckodag.sql | Antal bokningar per veckodag | Column chart |
-| 02_top10_populäraste_skrivbord.sql | De 10 mest bokade skrivborden | Horizontal bar chart |
-| 03_top10_skrivbord_flest_unika_användare.sql | Skrivbord med flest olika användare | Horizontal bar chart / Table |
-| 04_top10_populäraste_rum_med_snitttid.sql | Mest bokade rum med genomsnittlig bokningstid | Table |
-| 05_top10_mest_aktiva_användare_pivot.sql | Mest aktiva användare med deras top 5 skrivbord | Table (pivot) |
-| 06_senaste_bokningar_skrivbord.sql | De 5 senaste bokade skrivborden (realtid) | Table |
-| 07_senaste_bokningar_rum.sql | De 5 senaste bokade rummen (realtid) | Table |
-| 08_senaste_bokningar_kombinerad.sql | De 5 senaste bokningarna (alla typer) | Table |
-| 09_veckodag_jamforelse_4veckor.sql | Jämförelse bokningar per veckodag (senaste vs tidigare 4 veckor) | Grouped Bar Chart |
-| 10_top10_minst_populära_rum.sql | De 10 minst populära rummen (underutnyttjade) | Horizontal bar chart / Table |
-| 11_obokade_rum.sql | Rum som aldrig har bokats | Table |
-| 12_top10_minst_populära_skrivbord.sql | De 10 minst populära skrivborden (underutnyttjade) | Horizontal bar chart / Table |
-| 13_obokade_skrivbord.sql | Skrivbord som aldrig har bokats | Table |
+| 01_bookings_per_weekday.sql | Number of bookings per weekday | Column chart |
+| 02_top10_most_popular_desks.sql | The 10 most booked desks | Horizontal bar chart |
+| 03_top10_desks_most_unique_users.sql | Desks with the most distinct users | Horizontal bar chart / Table |
+| 04_top10_most_popular_rooms_avg_duration.sql | Most booked rooms with average booking duration | Table |
+| 05_top10_most_active_users_pivot.sql | Most active users with their top 5 desks | Table (pivot) |
+| 06_latest_bookings_desks.sql | The 5 most recently booked desks (real time) | Table |
+| 07_latest_bookings_rooms.sql | The 5 most recently booked rooms (real time) | Table |
+| 08_latest_bookings_combined.sql | The 5 most recent bookings (all types) | Table |
+| 09_weekday_comparison_4weeks.sql | Bookings per weekday compared (last vs previous 4 weeks) | Grouped Bar Chart |
+| 10_top10_least_popular_rooms.sql | The 10 least popular rooms (under-used) | Horizontal bar chart / Table |
+| 11_unbooked_rooms.sql | Rooms that have never been booked | Table |
+| 12_top10_least_popular_desks.sql | The 10 least popular desks (under-used) | Horizontal bar chart / Table |
+| 13_unbooked_desks.sql | Desks that have never been booked | Table |
 
-## Hur du använder frågorna
+## How to use the questions
 
-### 1. Öppna Metabase
+### 1. Open Metabase
 ```
 http://localhost:3000
 ```
 
-### 2. Skapa en ny fråga
-1. Klicka på **"New"** → **"SQL query"**
-2. Välj **"awaio_db"** databas
-3. Kopiera innehållet från någon av SQL-filerna
-4. Klicka **"Run"** för att testa
-5. Välj lämplig visualisering (se tabellen ovan)
-6. Klicka **"Save"** och ge frågan ett namn
+### 2. Create a new question
+1. Click **"New"** → **"SQL query"**
+2. Choose the **"awaio_db"** database
+3. Copy the contents of one of the SQL files
+4. Click **"Run"** to test it
+5. Choose a suitable visualisation (see the table above)
+6. Click **"Save"** and give the question a name
 
-### 3. Skapa Dashboard
-1. Klicka på **"New"** → **"Dashboard"**
-2. Ge den ett namn: **"Awaio Bokningsanalys"**
-3. Klicka **"Add a question"**
-4. Välj dina sparade frågor
-5. Justera layout och storlek
+### 3. Create a dashboard
+1. Click **"New"** → **"Dashboard"**
+2. Give it a name: **"Awaio Booking Analysis"**
+3. Click **"Add a question"**
+4. Choose your saved questions
+5. Adjust the layout and sizes
 
-## Rekommenderad Dashboard-layout
+## Recommended dashboard layout
 
-### Dashboard 1: Översikt och statistik
+### Dashboard 1: Overview and statistics
 ```
 +-----------------------------------+-----------------------------------+
 |                                   |                                   |
-|  Bokningar per veckodag           |  Top 10 populäraste skrivbord     |
+|  Bookings per weekday             |  Top 10 most popular desks        |
 |  (Column chart)                   |  (Horizontal bar chart)           |
 |                                   |                                   |
 +-----------------------------------+-----------------------------------+
 |                                   |                                   |
-|  Top 10 skrivbord                 |  Top 10 populäraste rum           |
-|  - flest unika användare          |  med snitttid                     |
+|  Top 10 desks                     |  Top 10 most popular rooms        |
+|  - most unique users              |  with average duration            |
 |  (Horizontal bar chart)           |  (Table)                          |
 |                                   |                                   |
 +-----------------------------------+-----------------------------------+
 |                                                                       |
-|  Top 10 mest aktiva användare med deras 5 vanligaste skrivbord       |
+|  Top 10 most active users with their 5 most common desks             |
 |  (Table - full width)                                                 |
 |                                                                       |
 +-----------------------------------------------------------------------+
 ```
 
-### Dashboard 2: Realtidsöversikt (widgets)
+### Dashboard 2: Real-time overview (widgets)
 ```
 +-------------------------------------+-------------------------------------+
 |                                     |                                     |
-|  Senaste bokade skrivbord (5 st)    |  Senaste bokade rum (5 st)          |
+|  Latest booked desks (5)            |  Latest booked rooms (5)            |
 |  (Table - auto-refresh)             |  (Table - auto-refresh)             |
 |                                     |                                     |
 +-------------------------------------+-------------------------------------+
 |                                                                             |
-|  Senaste bokningar - alla typer (5 st)                                      |
+|  Latest bookings - all types (5)                                            |
 |  (Table - auto-refresh, full width)                                         |
 |                                                                             |
 +-----------------------------------------------------------------------------+
 ```
 
-**Tips för realtidswidgets:**
-- Ställ in auto-refresh till 1-5 minuter
-- Kompakta kolumner för bättre översikt
-- Använd färgkodning för status (grön=pågående, grå=avslutad, blå=kommande)
+**Tips for real-time widgets:**
+- Set auto-refresh to 1-5 minutes
+- Compact columns for a better overview
+- Use colour coding for status (green = ongoing, grey = finished, blue = upcoming)
 
-## Tips för Metabase
+## Metabase tips
 
-### Visualiseringsval
-- **Column/Bar chart**: Bra för jämförelser
-- **Table**: Bra för detaljerad data med många kolumner
-- **Line chart**: Bra för trender över tid
+### Choosing a visualisation
+- **Column/Bar chart**: good for comparisons
+- **Table**: good for detailed data with many columns
+- **Line chart**: good for trends over time
 
-### Filtrering
-Du kan lägga till filter i Metabase UI:
-- Datumfilter för att visa endast senaste månaden
-- Entity-filter för att fokusera på specifika våningar/områden
-- Användarfilter för att se specifika personers bokningar
+### Filtering
+You can add filters in the Metabase UI:
+- A date filter to show only the last month
+- An entity filter to focus on specific floors/areas
+- A user filter to see specific people's bookings
 
-### Automatisk uppdatering
-Ställ in dashboard att uppdatera automatiskt:
-1. Öppna dashboard
-2. Klicka på **"..."** → **"Dashboard settings"**
-3. Under **"Auto-refresh"**, välj intervall (t.ex. 1 timme)
+### Automatic refresh
+Set the dashboard to refresh automatically:
+1. Open the dashboard
+2. Click **"..."** → **"Dashboard settings"**
+3. Under **"Auto-refresh"**, choose an interval (e.g. 1 hour)
 
-**För realtidswidgets (frågor 06-08):**
-- Använd kortare refresh-intervall: 1-5 minuter
-- Perfekt för att visa på stora skärmar i kontoret
-- Visar alltid de senaste bokningarna
+**For the real-time widgets (questions 06-08):**
+- Use a shorter refresh interval: 1-5 minutes
+- Ideal for showing on large screens in the office
+- Always shows the latest bookings
 
-## Ytterligare frågor
+## More questions
 
-Om du vill ha fler analyser, här är några förslag:
+If you want more analyses, here are some ideas:
 
-### Tidsbaserade analyser
-- Bokningar per timme på dagen
-- Bokningar per vecka/månad (trend)
-- Mest populära tider för skrivbordsbokningar
+### Time-based analyses
+- Bookings per hour of the day
+- Bookings per week/month (trend)
+- Most popular times for desk bookings
 
-### Användningsgrad
-- % av tillgänglig tid som är bokad per entity
-- Outnyttjade skrivbord/rum
-- Peak-tider vs lågtrafik-tider
+### Utilisation
+- % of available time that is booked per entity
+- Unused desks/rooms
+- Peak times vs quiet times
 
-### Användaranalys
-- Genomsnittlig bokningstid per användare
-- Användare som bokar mest i förväg
-- Mest aktiva användare per område
+### User analysis
+- Average booking duration per user
+- Users who book furthest in advance
+- Most active users per area
 
-Se CLAUDE.md för mer information om projektet.
+See CLAUDE.md for more information about the project.
