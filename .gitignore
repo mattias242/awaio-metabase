@@ -1,0 +1,76 @@
+# Environment variables (CONTAINS SECRETS!)
+.env
+secret.md
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Docker volumes
+postgres_data/
+metabase_data/
+pgadmin_data/
+mindsdb_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JSON exports (may contain sensitive data)
+json/
+*.json
+
+# Logs and runtime state
+logs/
+*.log
+
+# Backups (only backup SQL files, not schema/query files)
+backup/
+backups/
+metabase_backups/
+*backup*.sql
+restore_*.sql
+*.tar.gz
+*.tar.gz.sha256
+migration_backup/
+
+# Claude Code internal files
+.claude/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+.hypothesis/
+*.cover
+.cache
+
+# Pre-commit
+.pre-commit-config.yaml.bak
+
+# Metabase app-DB backups contain secrets (embedding key, password hashes)
+*.sql.gz

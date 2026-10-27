@@ -1,0 +1,208 @@
+services:
+  # PostgreSQL databas (optimerad för Windows/WSL2 med Docker Desktop)
+  postgres:
+    image: postgres:16-alpine
+    container_name: awaio-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-awaio_db}
+      POSTGRES_USER: ${POSTGRES_USER:-awaio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: ${TZ:-Europe/Stockholm}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./awaio_database_schema_postgres.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./init-metabase-db.sh:/docker-entrypoint-initdb.d/00_init_metabase_db.sh
+    networks:
+      - awaio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-awaio_user}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    mem_limit: 1024m
+    memswap_limit: 1024m
+
+  # Metabase för visualisering
+  metabase:
+    image: metabase/metabase:latest
+    container_name: awaio-metabase
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase_app
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER:-awaio_user}
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-change_me}
+      MB_DB_HOST: postgres
+      JAVA_OPTS: "-Xmx1536m -Xms512m"
+      MB_JETTY_MAX_THREADS: 30
+      TZ: ${TZ:-Europe/Stockholm}
+    ports:
+      - "${METABASE_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - awaio-network
+    volumes:
+      - metabase_data:/metabase-data
+    restart: unless-stopped
+    mem_limit: 2048m
+    memswap_limit: 2048m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # MindsDB för ML och AI predictions (profil: ai / full)
+  mindsdb:
+    image: mindsdb/mindsdb:latest
+    container_name: awaio-mindsdb
+    ports:
+      - "${MINDSDB_PORT:-47334}:47334"
+      - "${MINDSDB_MYSQL_PORT:-47335}:47335"
+      - "${MINDSDB_MONGODB_PORT:-47336}:47336"
+    volumes:
+      - mindsdb_data:/root/mindsdb
+    networks:
+      - awaio-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 2048m
+    memswap_limit: 2048m
+    profiles:
+      - full
+      - ai
+
+  # Streamlit Chat App (profil: ai / full)
+  chat:
+    build:
+      context: ./chat_app
+      dockerfile: Dockerfile
+    container_name: awaio-chat
+    ports:
+      - "${CHAT_PORT:-8501}:8501"
+    environment:
+      MINDSDB_HOST: mindsdb
+      MINDSDB_PORT: 47334
+    networks:
+      - awaio-network
+    depends_on:
+      - mindsdb
+    restart: unless-stopped
+    mem_limit: 256m
+    memswap_limit: 512m
+    profiles:
+      - full
+      - ai
+
+  # pgAdmin för databashantering (profil: admin / full)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: awaio-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - awaio-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    profiles:
+      - full
+      - admin
+
+  # Python Data Fetcher (profil: tools — körs via docker compose run)
+  fetcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetcher
+    image: awaio-fetcher:latest
+    container_name: awaio-fetcher
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-awaio_db}
+      POSTGRES_USER: ${POSTGRES_USER:-awaio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      AWAIO_API_BASE_URL: ${AWAIO_API_BASE_URL}
+      AWAIO_AUTH_URL: ${AWAIO_AUTH_URL}
+      AWAIO_CLIENT_ID: ${AWAIO_CLIENT_ID}
+      AWAIO_CLIENT_SECRET: ${AWAIO_CLIENT_SECRET}
+      ANONYMIZE_USERS: ${ANONYMIZE_USERS:-false}
+      ANONYMIZE_SALT: ${ANONYMIZE_SALT:-}
+      TZ: ${TZ:-Europe/Stockholm}
+    networks:
+      - awaio-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    restart: "no"
+    mem_limit: 256m
+    memswap_limit: 512m
+    profiles:
+      - tools
+
+  # Långkörande scheduler — kör fetch_bookings + fetch_entities + REFRESH bi.v_hour_slots
+  # varje hel timme 07–19 Europe/Stockholm. Delar image med `fetcher`.
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetcher
+    image: awaio-fetcher:latest
+    container_name: awaio-scheduler
+    command: ["python3", "-u", "scheduler_loop.py"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-awaio_db}
+      POSTGRES_USER: ${POSTGRES_USER:-awaio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      AWAIO_API_BASE_URL: ${AWAIO_API_BASE_URL}
+      AWAIO_AUTH_URL: ${AWAIO_AUTH_URL}
+      AWAIO_CLIENT_ID: ${AWAIO_CLIENT_ID}
+      AWAIO_CLIENT_SECRET: ${AWAIO_CLIENT_SECRET}
+      ANONYMIZE_USERS: ${ANONYMIZE_USERS:-false}
+      ANONYMIZE_SALT: ${ANONYMIZE_SALT:-}
+      TZ: ${TZ:-Europe/Stockholm}
+    networks:
+      - awaio-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    mem_limit: 256m
+    memswap_limit: 512m
+
+volumes:
+  postgres_data:
+    driver: local
+  metabase_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  mindsdb_data:
+    driver: local
+
+networks:
+  awaio-network:
+    driver: bridge
